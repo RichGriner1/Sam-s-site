@@ -1,0 +1,48 @@
+---
+// Imagen del proyecto, o un recuadro de espera mientras no hay foto.
+import { Image } from 'astro:assets'
+import type { ImageMetadata } from 'astro'
+import { cn } from '$lib/utils'
+
+interface Props {
+	src?: ImageMetadata
+	alt: string
+	label?: string
+	class?: string
+	widths?: number[]
+	sizes?: string
+	eager?: boolean
+}
+
+const {
+	src,
+	alt,
+	label = 'Foto / video',
+	class: className,
+	widths = [480, 800, 1200, 1600],
+	sizes = '(min-width: 768px) 50vw, 100vw',
+	eager = false
+} = Astro.props
+---
+
+<div class={cn('relative overflow-hidden bg-muted', className)}>
+	{
+		src ? (
+			<Image
+				src={src}
+				alt={alt}
+				widths={widths}
+				sizes={sizes}
+				width={src.width}
+				height={src.height}
+				loading={eager ? 'eager' : 'lazy'}
+				decoding="async"
+				class="size-full object-cover"
+			/>
+		) : (
+			<div class="absolute inset-0 grid place-items-center">
+				<span class="eyebrow">{label}</span>
+			</div>
+		)
+	}
+</div>

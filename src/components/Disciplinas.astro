@@ -1,0 +1,42 @@
+---
+import { disciplinas } from '../data/site'
+---
+
+<section id="disciplinas" class="container-site scroll-mt-20 py-24 sm:py-32">
+	<div class="grid gap-6 md:grid-cols-[1fr_2fr]">
+		<p class="eyebrow fade-in">Disciplinas</p>
+		<p class="fade-in fade-in-d1 max-w-2xl font-display text-3xl leading-tight sm:text-4xl">
+			Un mismo lenguaje en distintos formatos. Elige una disciplina para ver el trabajo y lo que
+			ofrezco.
+		</p>
+	</div>
+
+	<ul class="mt-16 border-t border-border">
+		{
+			disciplinas.map((d, i) => (
+				<li class="fade-in border-b border-border">
+					<a
+						href={`/${d.slug}`}
+						class="group grid grid-cols-[auto_1fr_auto] items-baseline gap-x-6 py-6 sm:py-8"
+					>
+						<span class="text-xs text-muted-foreground tabular-nums">
+							{String(i + 1).padStart(2, '0')}
+						</span>
+						<span>
+							<span class="block font-display text-4xl leading-none transition-transform duration-500 group-hover:translate-x-2 sm:text-6xl">
+								{d.name}
+							</span>
+							<span class="mt-2 block text-sm text-muted-foreground sm:text-base">{d.short}</span>
+						</span>
+						<span
+							class="text-2xl text-muted-foreground transition-colors group-hover:text-foreground"
+							aria-hidden="true"
+						>
+							→
+						</span>
+					</a>
+				</li>
+			))
+		}
+	</ul>
+</section>

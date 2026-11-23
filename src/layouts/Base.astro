@@ -1,0 +1,104 @@
+---
+import '../styles/global.css'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import { site } from '../data/site'
+
+interface Props {
+	title?: string
+	description?: string
+	image?: string
+	url?: string
+}
+
+const { title, description = site.description, image = '/og.jpg', url } = Astro.props
+const fullTitle = title ? `${title} — ${site.name}` : `${site.name} — ${site.title}`
+const canonical = url ?? new URL(Astro.url.pathname, Astro.site).href
+const ogImage = new URL(image, Astro.site).href
+---
+
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<title>{fullTitle}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+
+		<meta property="og:type" content="website" />
+		<meta property="og:locale" content="es_MX" />
+		<meta property="og:title" content={fullTitle} />
+		<meta property="og:description" content={description} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:url" content={canonical} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={fullTitle} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImage} />
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body class="min-h-dvh overflow-x-clip">
+		<Header />
+		<main>
+			<slot />
+		</main>
+		<Footer />
+
+		<script>
+			const io = new IntersectionObserver(
+				(entries) => {
+					for (const e of entries) {
+						if (e.isIntersecting) {
+							e.target.classList.add('is-visible')
+							io.unobserve(e.target)
+						}
+					}
+				},
+				{ rootMargin: '0px 0px -8% 0px' }
+			)
+			const observe = (root: ParentNode) =>
+				root.querySelectorAll('.fade-in:not(.is-visible)').forEach((el) => io.observe(el))
+			observe(document)
+			new MutationObserver((muts) => {
+				for (const m of muts)
+					m.addedNodes.forEach((n) => n instanceof Element && observe(n.parentNode ?? n))
+			}).observe(document.body, { childList: true, subtree: true })
+		</script>
+
+		<style is:global>
+			.fade-in {
+				opacity: 0;
+				transform: translateY(16px);
+				transition:
+					opacity 0.8s ease var(--delay, 0ms),
+					transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) var(--delay, 0ms);
+			}
+			.fade-in.is-visible {
+				opacity: 1;
+				transform: none;
+			}
+			.fade-in-d1 { --delay: 100ms; }
+			.fade-in-d2 { --delay: 200ms; }
+			.fade-in-d3 { --delay: 300ms; }
+			.fade-in-d4 { --delay: 400ms; }
+			.fade-in-d5 { --delay: 500ms; }
+			.fade-in-d6 { --delay: 600ms; }
+			.fade-in-d7 { --delay: 700ms; }
+			@media (prefers-reduced-motion: reduce) {
+				.fade-in {
+					opacity: 1;
+					transform: none;
+					transition: none;
+				}
+			}
+		</style>
+	</body>
+</html>

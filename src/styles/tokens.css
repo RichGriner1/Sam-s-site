@@ -1,0 +1,28 @@
+/* src/styles/tokens.css — Tokens de diseño para Samuel Ramirez
+   Blanco y negro a propósito: el color lo ponen los proyectos. */
+:root {
+	--primary: oklch(98% 0 0);
+	--primary-foreground: oklch(8% 0 0);
+
+	--background: oklch(8% 0 0);
+	--foreground: oklch(97% 0 0);
+	--card: oklch(11% 0 0);
+	--card-foreground: oklch(97% 0 0);
+
+	--muted: oklch(15% 0 0);
+	--muted-foreground: oklch(66% 0 0);
+	--accent: oklch(18% 0 0);
+	--accent-foreground: oklch(97% 0 0);
+
+	--border: oklch(24% 0 0);
+	--input: oklch(24% 0 0);
+	--ring: oklch(85% 0 0);
+
+	--destructive: oklch(58% 0.22 25);
+	--destructive-foreground: oklch(98% 0 0);
+
+	--selection: oklch(97% 0 0);
+	--selection-foreground: oklch(8% 0 0);
+
+	--radius: 0rem;
+}

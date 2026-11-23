@@ -1,0 +1,39 @@
+---
+import Base from '../../layouts/Base.astro'
+import ProjectCard from '../../components/ProjectCard.astro'
+import CTA from '../../components/CTA.astro'
+import { disciplinas } from '../../data/site'
+import { getProyectos } from '$lib/proyectos'
+
+const proyectos = await getProyectos()
+---
+
+<Base title="Proyectos" description="Proyectos de Samuel Ramirez: coreografía, danza, dirección creativa, dirección de arte y gestión cultural.">
+	<section class="container-site pt-36 pb-12 sm:pt-44">
+		<p class="eyebrow fade-in">Portafolio</p>
+		<h1 class="fade-in fade-in-d1 mt-6 font-display text-6xl leading-[0.9] sm:text-8xl lg:text-9xl">
+			Proyectos
+		</h1>
+		<nav class="fade-in fade-in-d2 mt-10 flex flex-wrap gap-2" aria-label="Filtrar por disciplina">
+			<span class="border border-foreground bg-foreground px-4 py-2 text-sm text-background">Todos</span>
+			{
+				disciplinas.map((d) => (
+					<a
+						href={`/${d.slug}`}
+						class="border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+					>
+						{d.name}
+					</a>
+				))
+			}
+		</nav>
+	</section>
+
+	<section class="container-site pb-24">
+		<div class="grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
+			{proyectos.map((p) => <ProjectCard proyecto={p} class="fade-in" />)}
+		</div>
+	</section>
+
+	<CTA />
+</Base>

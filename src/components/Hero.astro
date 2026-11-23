@@ -1,0 +1,40 @@
+---
+import Media from './Media.astro'
+import { site } from '../data/site'
+---
+
+<section class="container-site pt-32 sm:pt-40">
+	<p class="eyebrow fade-in">{site.title}</p>
+	<h1
+		class="fade-in fade-in-d1 mt-6 font-display text-[clamp(3.5rem,14vw,12rem)] leading-[0.85] tracking-tight"
+	>
+		Samuel<br /><em>Ramirez</em>
+	</h1>
+	<div class="mt-10 grid gap-8 md:grid-cols-[2fr_1fr] md:items-end">
+		<p class="fade-in fade-in-d2 max-w-xl text-lg text-muted-foreground sm:text-xl">
+			{site.tagline}
+		</p>
+		<div class="fade-in fade-in-d3 flex flex-wrap gap-4 md:justify-end">
+			<a
+				href="/proyectos"
+				class="inline-flex h-12 items-center bg-primary px-7 text-sm font-medium tracking-wide text-primary-foreground transition-opacity hover:opacity-85"
+			>
+				Ver proyectos
+			</a>
+			<a
+				href="#contacto"
+				class="inline-flex h-12 items-center border border-foreground px-7 text-sm font-medium tracking-wide transition-colors hover:bg-foreground hover:text-background"
+			>
+				Contratar
+			</a>
+		</div>
+	</div>
+
+	<!-- Reel / video principal: reemplazar con un <video> o iframe cuando esté listo -->
+	<Media
+		alt="Reel de Samuel Ramirez"
+		label="Reel · video principal"
+		class="fade-in fade-in-d4 mt-16 aspect-[16/9] w-full"
+		eager
+	/>
+</section>

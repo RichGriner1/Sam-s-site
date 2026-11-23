@@ -1,0 +1,84 @@
+---
+// Una página por disciplina (/coreografia, /danza, …) para mandarla directo a un cliente.
+import Base from '../layouts/Base.astro'
+import ProjectCard from '../components/ProjectCard.astro'
+import CTA from '../components/CTA.astro'
+import { disciplinas, type Disciplina } from '../data/site'
+import { getProyectos } from '$lib/proyectos'
+
+export function getStaticPaths() {
+	return disciplinas.map((d) => ({ params: { disciplina: d.slug }, props: { d } }))
+}
+
+const { d } = Astro.props as { d: Disciplina }
+const proyectos = await getProyectos(d.slug)
+const otras = disciplinas.filter((x) => x.slug !== d.slug)
+---
+
+<Base title={d.name} description={`${d.name} — ${d.intro}`}>
+	<section class="container-site pt-36 pb-16 sm:pt-44">
+		<p class="eyebrow fade-in">Samuel Ramirez · {d.name}</p>
+		<h1 class="fade-in fade-in-d1 mt-6 font-display text-6xl leading-[0.9] sm:text-8xl lg:text-9xl">
+			{d.name}
+		</h1>
+		<p class="fade-in fade-in-d2 mt-8 max-w-2xl text-lg text-muted-foreground sm:text-xl">
+			{d.intro}
+		</p>
+	</section>
+
+	<section class="container-site border-t border-border py-16">
+		<div class="grid gap-10 md:grid-cols-[1fr_2fr]">
+			<p class="eyebrow">Qué ofrezco</p>
+			<ul class="divide-y divide-border border-y border-border">
+				{
+					d.services.map((s, i) => (
+						<li class="fade-in flex items-baseline gap-6 py-5">
+							<span class="text-xs text-muted-foreground tabular-nums">
+								{String(i + 1).padStart(2, '0')}
+							</span>
+							<span class="text-lg sm:text-xl">{s}</span>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</section>
+
+	<section class="container-site py-16">
+		<div class="flex items-baseline justify-between">
+			<h2 class="eyebrow">Proyectos de {d.name.toLowerCase()}</h2>
+			<span class="text-sm text-muted-foreground tabular-nums">{proyectos.length}</span>
+		</div>
+		{
+			proyectos.length ? (
+				<div class="mt-10 grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
+					{proyectos.map((p) => (
+						<ProjectCard proyecto={p} class="fade-in" />
+					))}
+				</div>
+			) : (
+				<p class="mt-10 text-muted-foreground">Próximamente.</p>
+			)
+		}
+	</section>
+
+	<CTA
+		heading={`Hablemos de tu proyecto de ${d.name.toLowerCase()}.`}
+		subject={`${d.name} — nuevo proyecto`}
+	/>
+
+	<section class="container-site border-t border-border py-12">
+		<p class="eyebrow">Otras disciplinas</p>
+		<ul class="mt-6 flex flex-wrap gap-x-8 gap-y-3">
+			{
+				otras.map((o) => (
+					<li>
+						<a href={`/${o.slug}`} class="font-display text-2xl transition-opacity hover:opacity-60 sm:text-3xl">
+							{o.name}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</section>
+</Base>

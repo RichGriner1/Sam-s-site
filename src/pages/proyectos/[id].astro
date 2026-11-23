@@ -1,0 +1,140 @@
+---
+import { render, type CollectionEntry } from 'astro:content'
+import Base from '../../layouts/Base.astro'
+import Media from '../../components/Media.astro'
+import ProjectCard from '../../components/ProjectCard.astro'
+import CTA from '../../components/CTA.astro'
+import { getDisciplina } from '../../data/site'
+import { getProyectos } from '$lib/proyectos'
+
+export async function getStaticPaths() {
+	const proyectos = await getProyectos()
+	return proyectos.map((p) => ({ params: { id: p.id }, props: { proyecto: p } }))
+}
+
+const { proyecto } = Astro.props as { proyecto: CollectionEntry<'proyectos'> }
+const { Content } = await render(proyecto)
+const p = proyecto.data
+const tags = p.disciplinas.map((d) => getDisciplina(d)!).filter(Boolean)
+
+const meta = [
+	{ label: 'Año', value: String(p.year) },
+	{ label: 'Rol', value: p.role },
+	{ label: 'Cliente', value: p.client },
+	{ label: 'Lugar', value: p.location }
+].filter((m) => m.value)
+
+const relacionados = (await getProyectos())
+	.filter((x) => x.id !== proyecto.id && x.data.disciplinas.some((d) => p.disciplinas.includes(d)))
+	.slice(0, 3)
+---
+
+<Base title={p.title} description={p.summary}>
+	<section class="container-site pt-36 pb-12 sm:pt-44">
+		<a href="/proyectos" class="eyebrow transition-colors hover:text-foreground">← Proyectos</a>
+		<h1 class="fade-in mt-8 font-display text-6xl leading-[0.9] sm:text-8xl lg:text-9xl">{p.title}</h1>
+		<p class="fade-in fade-in-d1 mt-8 max-w-2xl text-lg text-muted-foreground sm:text-xl">{p.summary}</p>
+		<ul class="fade-in fade-in-d2 mt-8 flex flex-wrap gap-2">
+			{
+				tags.map((t) => (
+					<li>
+						<a
+							href={`/${t.slug}`}
+							class="border border-border px-3 py-1.5 text-xs tracking-wide text-muted-foreground uppercase transition-colors hover:border-foreground hover:text-foreground"
+						>
+							{t.name}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</section>
+
+	<div class="container-site">
+		{
+			p.video ? (
+				<div class="aspect-video w-full bg-muted">
+					<iframe
+						src={p.video}
+						title={p.title}
+						class="size-full"
+						loading="lazy"
+						allow="autoplay; fullscreen; picture-in-picture"
+						allowfullscreen
+					/>
+				</div>
+			) : (
+				<Media
+					src={p.cover}
+					alt={p.coverAlt ?? p.title}
+					class="aspect-[16/9] w-full"
+					sizes="100vw"
+					widths={[800, 1200, 1600, 2400]}
+					eager
+				/>
+			)
+		}
+	</div>
+
+	<section class="container-site grid gap-12 py-20 md:grid-cols-[1fr_2fr]">
+		<dl class="space-y-6">
+			{
+				meta.map((m) => (
+					<div>
+						<dt class="eyebrow">{m.label}</dt>
+						<dd class="mt-1">{m.value}</dd>
+					</div>
+				))
+			}
+		</dl>
+		<div class="prose prose-invert prose-lg max-w-none prose-p:text-muted-foreground">
+			<Content />
+		</div>
+	</section>
+
+	{
+		p.gallery.length > 0 && (
+			<section class="container-site grid gap-4 pb-20 sm:grid-cols-2">
+				{p.gallery.map((g, i) => (
+					<Media
+						src={g.src}
+						alt={g.alt}
+						class={i % 3 === 0 ? 'aspect-[16/10] sm:col-span-2' : 'aspect-[4/5]'}
+						sizes={i % 3 === 0 ? '100vw' : '(min-width: 640px) 50vw, 100vw'}
+					/>
+				))}
+			</section>
+		)
+	}
+
+	{
+		p.credits.length > 0 && (
+			<section class="container-site border-t border-border py-16">
+				<p class="eyebrow">Créditos</p>
+				<dl class="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+					{p.credits.map((c) => (
+						<div>
+							<dt class="text-sm text-muted-foreground">{c.role}</dt>
+							<dd>{c.name}</dd>
+						</div>
+					))}
+				</dl>
+			</section>
+		)
+	}
+
+	<CTA heading="¿Algo así para tu proyecto?" subject={`Sobre: ${p.title}`} />
+
+	{
+		relacionados.length > 0 && (
+			<section class="container-site border-t border-border py-16">
+				<p class="eyebrow">Más proyectos</p>
+				<div class="mt-10 grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
+					{relacionados.map((r) => (
+						<ProjectCard proyecto={r} />
+					))}
+				</div>
+			</section>
+		)
+	}
+</Base>

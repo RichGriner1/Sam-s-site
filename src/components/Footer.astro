@@ -1,0 +1,68 @@
+---
+import { site, disciplinas } from '../data/site'
+
+const year = new Date().getFullYear()
+const socials = Object.entries(site.socials).filter(([, href]) => href)
+const socialLabels: Record<string, string> = {
+	instagram: 'Instagram',
+	vimeo: 'Vimeo',
+	youtube: 'YouTube'
+}
+---
+
+<footer class="border-t border-border">
+	<div class="container-site grid gap-12 py-16 md:grid-cols-[2fr_1fr_1fr]">
+		<div>
+			<p class="font-display text-4xl leading-none">{site.name}</p>
+			<p class="mt-3 max-w-sm text-sm text-muted-foreground">{site.title}</p>
+		</div>
+
+		<div>
+			<p class="eyebrow">Disciplinas</p>
+			<ul class="mt-4 space-y-2 text-sm">
+				{
+					disciplinas.map((d) => (
+						<li>
+							<a
+								href={`/${d.slug}`}
+								class="text-muted-foreground transition-colors hover:text-foreground"
+							>
+								{d.name}
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+
+		<div>
+			<p class="eyebrow">Contacto</p>
+			<ul class="mt-4 space-y-2 text-sm">
+				<li>
+					<a
+						href={`mailto:${site.email}`}
+						class="text-muted-foreground transition-colors hover:text-foreground">{site.email}</a
+					>
+				</li>
+				{
+					socials.map(([key, href]) => (
+						<li>
+							<a
+								href={href}
+								target="_blank"
+								rel="noopener"
+								class="text-muted-foreground transition-colors hover:text-foreground"
+							>
+								{socialLabels[key] ?? key}
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</div>
+
+	<div class="container-site border-t border-border py-6 text-xs text-muted-foreground">
+		© {year} {site.name}. Todos los derechos reservados.
+	</div>
+</footer>

@@ -1,0 +1,79 @@
+---
+import { site } from '../data/site'
+
+const links = [
+	{ href: '/proyectos', label: 'Proyectos' },
+	{ href: '/#disciplinas', label: 'Disciplinas' },
+	{ href: '/#sobre-mi', label: 'Sobre mí' },
+	{ href: '/#contacto', label: 'Contacto' }
+]
+---
+
+<header
+	class="fixed inset-x-0 top-0 z-50 border-b border-transparent bg-background/70 backdrop-blur-md transition-colors data-[scrolled]:border-border"
+	data-header
+>
+	<div class="container-site flex h-16 items-center justify-between">
+		<a href="/" class="text-sm font-semibold tracking-[0.18em] uppercase">{site.name}</a>
+
+		<nav class="hidden items-center gap-8 md:flex" aria-label="Principal">
+			{
+				links.map((l) => (
+					<a
+						href={l.href}
+						class="text-sm text-muted-foreground transition-colors hover:text-foreground"
+					>
+						{l.label}
+					</a>
+				))
+			}
+		</nav>
+
+		<button
+			type="button"
+			class="-mr-2 p-2 text-sm tracking-[0.18em] uppercase md:hidden"
+			aria-expanded="false"
+			aria-controls="menu-movil"
+			data-menu-toggle
+		>
+			Menú
+		</button>
+	</div>
+
+	<nav
+		id="menu-movil"
+		class="hidden border-t border-border bg-background md:hidden"
+		aria-label="Menú móvil"
+		data-menu
+	>
+		<ul class="container-site flex flex-col py-4">
+			{
+				links.map((l) => (
+					<li>
+						<a href={l.href} class="block py-3 font-display text-3xl">
+							{l.label}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</nav>
+</header>
+
+<script>
+	const header = document.querySelector<HTMLElement>('[data-header]')!
+	const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]')!
+	const menu = document.querySelector<HTMLElement>('[data-menu]')!
+
+	const onScroll = () => header.toggleAttribute('data-scrolled', window.scrollY > 8)
+	onScroll()
+	window.addEventListener('scroll', onScroll, { passive: true })
+
+	const setOpen = (open: boolean) => {
+		menu.classList.toggle('hidden', !open)
+		toggle.setAttribute('aria-expanded', String(open))
+		toggle.textContent = open ? 'Cerrar' : 'Menú'
+	}
+	toggle.addEventListener('click', () => setOpen(menu.classList.contains('hidden')))
+	menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)))
+</script>

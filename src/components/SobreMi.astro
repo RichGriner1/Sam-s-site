@@ -1,0 +1,53 @@
+---
+import Media from './Media.astro'
+
+// TODO: reemplazar con la bio, cifras y colaboradores reales
+const cifras = [
+	{ value: '10+', label: 'años de trayectoria' },
+	{ value: '50+', label: 'proyectos realizados' },
+	{ value: '6', label: 'disciplinas' }
+]
+const colaboradores = ['Institución', 'Festival', 'Marca', 'Compañía', 'Museo', 'Productora']
+---
+
+<section id="sobre-mi" class="scroll-mt-20 border-t border-border">
+	<div class="container-site grid gap-12 py-24 sm:py-32 md:grid-cols-2 md:gap-16">
+		<Media alt="Retrato de Samuel Ramirez" label="Retrato" class="fade-in aspect-[4/5]" />
+
+		<div class="md:pt-12">
+			<p class="eyebrow fade-in">Sobre mí</p>
+			<h2 class="fade-in fade-in-d1 mt-6 font-display text-4xl leading-tight sm:text-5xl">
+				Creo experiencias donde el cuerpo, la imagen y la comunidad se encuentran.
+			</h2>
+			<div class="fade-in fade-in-d2 mt-8 space-y-4 text-muted-foreground">
+				<p>
+					Texto de ejemplo. Aquí va la bio de Samuel: de dónde viene, cómo empezó y qué lo mueve.
+					Dos o tres párrafos cortos, en primera persona.
+				</p>
+				<p>
+					Texto de ejemplo. Su formación, compañías, festivales y lugares donde ha presentado su
+					trabajo.
+				</p>
+			</div>
+
+			<dl class="fade-in fade-in-d3 mt-12 grid grid-cols-3 gap-6 border-t border-border pt-8">
+				{
+					cifras.map((c) => (
+						<div>
+							<dt class="sr-only">{c.label}</dt>
+							<dd class="font-display text-4xl sm:text-5xl">{c.value}</dd>
+							<dd class="mt-1 text-xs text-muted-foreground sm:text-sm">{c.label}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</div>
+	</div>
+
+	<div class="container-site border-t border-border py-12">
+		<p class="eyebrow">Ha colaborado con</p>
+		<ul class="mt-6 flex flex-wrap gap-x-10 gap-y-4 font-display text-2xl text-muted-foreground sm:text-3xl">
+			{colaboradores.map((c) => <li>{c}</li>)}
+		</ul>
+	</div>
+</section>

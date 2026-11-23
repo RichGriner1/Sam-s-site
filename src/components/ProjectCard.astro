@@ -1,0 +1,31 @@
+---
+import type { CollectionEntry } from 'astro:content'
+import Media from './Media.astro'
+import { getDisciplina } from '../data/site'
+import { cn } from '$lib/utils'
+
+interface Props {
+	proyecto: CollectionEntry<'proyectos'>
+	class?: string
+	aspect?: 'portrait' | 'landscape'
+}
+
+const { proyecto, class: className, aspect = 'portrait' } = Astro.props
+const { title, year, cover, coverAlt, disciplinas, role } = proyecto.data
+const tags = disciplinas.map((d) => getDisciplina(d)?.name).filter(Boolean)
+---
+
+<a href={`/proyectos/${proyecto.id}`} class={cn('group block', className)}>
+	<Media
+		src={cover}
+		alt={coverAlt ?? title}
+		class={cn(aspect === 'portrait' ? 'aspect-[4/5]' : 'aspect-[16/10]')}
+	/>
+	<div class="mt-4 flex items-baseline justify-between gap-4">
+		<h3 class="font-display text-2xl leading-tight transition-opacity group-hover:opacity-70 sm:text-3xl">
+			{title}
+		</h3>
+		<span class="shrink-0 text-sm text-muted-foreground tabular-nums">{year}</span>
+	</div>
+	<p class="mt-1 text-sm text-muted-foreground">{role} · {tags.join(', ')}</p>
+</a>

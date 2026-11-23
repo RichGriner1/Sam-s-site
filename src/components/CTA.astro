@@ -1,0 +1,48 @@
+---
+import { site, contactHref } from '../data/site'
+
+interface Props {
+	heading?: string
+	text?: string
+	subject?: string
+}
+
+const {
+	heading = '¿Tienes un proyecto en mente?',
+	text = 'Cuéntame la idea, la fecha y el lugar. Respondo personalmente cada mensaje.',
+	subject = 'Nuevo proyecto'
+} = Astro.props
+const whatsapp = site.whatsapp
+	? `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(`Hola Samuel, te escribo por: ${subject}`)}`
+	: ''
+---
+
+<section id="contacto" class="border-t border-border">
+	<div class="container-site py-24 sm:py-32">
+		<p class="eyebrow fade-in">Contacto</p>
+		<h2 class="fade-in fade-in-d1 mt-6 max-w-4xl font-display text-5xl leading-[0.95] sm:text-7xl">
+			{heading}
+		</h2>
+		<p class="fade-in fade-in-d2 mt-6 max-w-xl text-lg text-muted-foreground">{text}</p>
+		<div class="fade-in fade-in-d3 mt-10 flex flex-wrap gap-4">
+			<a
+				href={contactHref(subject)}
+				class="inline-flex h-12 items-center bg-primary px-7 text-sm font-medium tracking-wide text-primary-foreground transition-opacity hover:opacity-85"
+			>
+				Escríbeme
+			</a>
+			{
+				whatsapp && (
+					<a
+						href={whatsapp}
+						target="_blank"
+						rel="noopener"
+						class="inline-flex h-12 items-center border border-foreground px-7 text-sm font-medium tracking-wide transition-colors hover:bg-foreground hover:text-background"
+					>
+						WhatsApp
+					</a>
+				)
+			}
+		</div>
+	</div>
+</section>
