@@ -17,7 +17,7 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 
 <section
 	class="hero relative isolate flex h-svh min-h-[600px] items-center justify-center overflow-hidden"
-	data-reel-open
+	data-modal-open="reel"
 	data-hero
 >
 	{
@@ -39,14 +39,16 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 		)
 	}
 
-	<!-- Reel de fondo: cubre toda la pantalla, sin sonido, sin controles -->
+	<!-- Reel de fondo: cubre toda la pantalla, sin sonido, sin controles.
+	     El reel viene en formato cine (≈2.39:1) con barras negras dentro del 16:9,
+	     así que el iframe se agranda para que solo se vea la imagen (75% del alto). -->
 	<div class="hero-video pointer-events-none absolute inset-0 -z-20" aria-hidden="true" data-hero-video>
 		<iframe
 			src={bgSrc}
 			title=""
 			tabindex="-1"
 			allow="autoplay; encrypted-media"
-			class="absolute top-1/2 left-1/2 h-[max(100%,56.25vw)] w-[max(100%,177.78svh)] -translate-1/2"
+			class="absolute top-1/2 left-1/2 h-[max(56.25vw,133.34svh,800px)] w-[max(100vw,237.04svh,1423px)] -translate-1/2"
 			data-hero-iframe></iframe>
 	</div>
 
@@ -69,13 +71,20 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 		<p class="fade-in fade-in-d2 mx-auto mt-6 max-w-xl font-display text-xl text-foreground/90 italic sm:text-2xl">
 			{site.title}
 		</p>
-		<div class="fade-in fade-in-d4 mt-10 flex justify-center">
+		<div class="fade-in fade-in-d4 mt-10 flex flex-wrap justify-center gap-3">
 			<button
 				type="button"
-				data-reel-open
-				class="hero-button inline-flex h-14 items-center rounded-full border border-foreground/70 bg-background/20 px-10 backdrop-blur-md text-sm tracking-[0.2em] uppercase transition-colors duration-500 ease-out hover:bg-foreground hover:text-background"
+				data-modal-open="reel"
+				class="hero-button inline-flex h-14 items-center rounded-full bg-foreground px-10 text-sm tracking-[0.2em] text-background uppercase transition-opacity duration-500 ease-out hover:opacity-85"
 			>
 				Ver reel
+			</button>
+			<button
+				type="button"
+				data-modal-open="contacto"
+				class="hero-button inline-flex h-14 items-center rounded-full border border-foreground/70 bg-background/20 px-10 text-sm tracking-[0.2em] uppercase backdrop-blur-md transition-colors duration-500 ease-out hover:bg-foreground hover:text-background"
+			>
+				Contáctame
 			</button>
 		</div>
 	</div>
@@ -98,7 +107,7 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 	const video = hero.querySelector<HTMLElement>('[data-hero-video]')!
 	const iframe = hero.querySelector<HTMLIFrameElement>('[data-hero-iframe]')!
 	const cursor = hero.querySelector<HTMLElement>('[data-hero-cursor]')!
-	const dialog = document.querySelector<HTMLDialogElement>('[data-reel]')
+	const dialogs = document.querySelectorAll<HTMLDialogElement>('[data-modal]')
 
 	// YouTube muestra su interfaz un instante al cargar: el video aparece después
 	iframe.addEventListener('load', () => setTimeout(() => video.classList.add('is-ready'), 1200))
@@ -128,15 +137,17 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 	})
 	hero.addEventListener('pointerleave', () => hero.removeAttribute('data-cursor'))
 
-	// Pausa el video de fondo mientras el reel está abierto
+	// Pausa el video de fondo mientras haya un diálogo abierto
 	const command = (func: string) =>
 		iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*')
-	if (dialog) {
-		new MutationObserver(() => {
-			command(dialog.open ? 'pauseVideo' : 'playVideo')
-			if (dialog.open) hero.removeAttribute('data-cursor')
-		}).observe(dialog, { attributes: true, attributeFilter: ['open'] })
+	const sync = () => {
+		const anyOpen = [...dialogs].some((d) => d.open)
+		command(anyOpen ? 'pauseVideo' : 'playVideo')
+		if (anyOpen) hero.removeAttribute('data-cursor')
 	}
+	dialogs.forEach((d) =>
+		new MutationObserver(sync).observe(d, { attributes: true, attributeFilter: ['open'] })
+	)
 </script>
 
 <style>

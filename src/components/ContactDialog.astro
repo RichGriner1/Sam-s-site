@@ -1,0 +1,181 @@
+---
+// Formulario de contacto en un diálogo: se abre con cualquier [data-modal-open="contacto"].
+// Un trigger con data-modal-tipo="coreografia" preselecciona el tipo de proyecto.
+import Modal from './Modal.astro'
+import { site, disciplinas } from '../data/site'
+
+const field =
+	'mt-2 w-full border-0 border-b border-border bg-transparent px-0 py-2.5 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-foreground focus:ring-0 focus:outline-none transition-colors'
+const label = 'eyebrow block'
+---
+
+<Modal
+	id="contacto"
+	label="Contactar a Samuel Ramirez"
+	class="max-h-[88svh] w-[min(92vw,600px)] overflow-y-auto border border-border bg-card p-7 shadow-2xl sm:p-10"
+>
+	<form
+		class="contact-form"
+		data-contact-form
+		data-endpoint={site.formEndpoint}
+		data-email={site.email}
+		novalidate
+	>
+		<div data-contact-fields>
+			<p class="eyebrow">Contacto</p>
+			<h2 class="mt-3 font-display text-4xl leading-none sm:text-5xl">Hablemos.</h2>
+			<p class="mt-3 text-sm text-muted-foreground">
+				Cuéntame la idea, la fecha y el lugar. Respondo personalmente cada mensaje.
+			</p>
+
+			<div class="mt-8 grid gap-6 sm:grid-cols-2">
+				<label class="sm:col-span-2">
+					<span class={label}>Nombre *</span>
+					<input name="nombre" type="text" autocomplete="name" required class={field} />
+				</label>
+				<label>
+					<span class={label}>Email *</span>
+					<input name="email" type="email" autocomplete="email" required class={field} />
+				</label>
+				<label>
+					<span class={label}>Teléfono / WhatsApp</span>
+					<input name="telefono" type="tel" autocomplete="tel" class={field} />
+				</label>
+				<label>
+					<span class={label}>Tipo de proyecto *</span>
+					<select name="tipo" required class={`${field} cursor-pointer`} data-contact-tipo>
+						<option value="" disabled selected>Elegir…</option>
+						{disciplinas.map((d) => <option value={d.name}>{d.name}</option>)}
+						<option value="Otro">Otro</option>
+					</select>
+				</label>
+				<label>
+					<span class={label}>Fecha aproximada</span>
+					<input name="fecha" type="text" placeholder="Ej. marzo 2026" class={field} />
+				</label>
+				<label class="sm:col-span-2">
+					<span class={label}>Mensaje *</span>
+					<textarea
+						name="mensaje"
+						rows="4"
+						required
+						placeholder="Cuéntame del proyecto, lugar, presupuesto…"
+						class={`${field} resize-none`}></textarea>
+				</label>
+			</div>
+
+			<p class="mt-6 hidden text-sm text-destructive" role="alert" data-contact-error></p>
+
+			<button
+				type="submit"
+				class="mt-8 inline-flex h-14 w-full items-center justify-center rounded-full bg-foreground text-sm tracking-[0.2em] text-background uppercase transition-opacity duration-500 ease-out hover:opacity-85 disabled:opacity-50"
+				data-contact-submit
+			>
+				Enviar
+			</button>
+		</div>
+
+		<div class="hidden py-10 text-center" data-contact-done>
+			<p class="font-display text-5xl leading-none">Gracias.</p>
+			<p class="mt-4 text-muted-foreground" data-contact-done-text>
+				Recibí tu mensaje. Te respondo pronto.
+			</p>
+		</div>
+	</form>
+</Modal>
+
+<script>
+	const dialog = document.querySelector<HTMLDialogElement>('[data-modal="contacto"]')!
+	const form = dialog.querySelector<HTMLFormElement>('[data-contact-form]')!
+	const tipo = form.querySelector<HTMLSelectElement>('[data-contact-tipo]')!
+	const fields = form.querySelector<HTMLElement>('[data-contact-fields]')!
+	const done = form.querySelector<HTMLElement>('[data-contact-done]')!
+	const doneText = form.querySelector<HTMLElement>('[data-contact-done-text]')!
+	const error = form.querySelector<HTMLElement>('[data-contact-error]')!
+	const submit = form.querySelector<HTMLButtonElement>('[data-contact-submit]')!
+
+	const showError = (msg: string) => {
+		error.textContent = msg
+		error.classList.toggle('hidden', !msg)
+	}
+
+	dialog.addEventListener('modal:open', (e) => {
+		const trigger = (e as CustomEvent<{ trigger: HTMLElement }>).detail.trigger
+		const preset = trigger.dataset.modalTipo
+		if (preset) tipo.value = preset
+		// Si ya se envió, el formulario vuelve a empezar
+		if (!done.classList.contains('hidden')) {
+			form.reset()
+			fields.classList.remove('hidden')
+			done.classList.add('hidden')
+		}
+		showError('')
+	})
+
+	form.addEventListener('submit', async (e) => {
+		e.preventDefault()
+		if (!form.checkValidity()) {
+			const firstBad = form.querySelector<HTMLElement>(':invalid')
+			firstBad?.focus()
+			showError('Revisa los campos marcados con *. El email debe ser válido.')
+			return
+		}
+		showError('')
+		const data = Object.fromEntries(new FormData(form)) as Record<string, string>
+		const endpoint = form.dataset.endpoint
+
+		if (!endpoint) {
+			// Sin servicio configurado: abre el correo del visitante con todo escrito
+			const body = [
+				`Nombre: ${data.nombre}`,
+				`Email: ${data.email}`,
+				data.telefono && `Teléfono: ${data.telefono}`,
+				`Tipo de proyecto: ${data.tipo}`,
+				data.fecha && `Fecha: ${data.fecha}`,
+				'',
+				data.mensaje
+			]
+				.filter((l) => l !== undefined && l !== '')
+				.join('\n')
+			window.location.href = `mailto:${form.dataset.email}?subject=${encodeURIComponent(
+				`${data.tipo} — ${data.nombre}`
+			)}&body=${encodeURIComponent(body)}`
+			doneText.textContent = 'Se abrió tu correo con el mensaje listo. Solo dale enviar.'
+			fields.classList.add('hidden')
+			done.classList.remove('hidden')
+			return
+		}
+
+		submit.disabled = true
+		submit.textContent = 'Enviando…'
+		try {
+			const res = await fetch(endpoint, {
+				method: 'POST',
+				headers: { Accept: 'application/json' },
+				body: new FormData(form)
+			})
+			if (!res.ok) throw new Error()
+			fields.classList.add('hidden')
+			done.classList.remove('hidden')
+		} catch {
+			showError(`No se pudo enviar. Escríbeme directo a ${form.dataset.email}.`)
+		} finally {
+			submit.disabled = false
+			submit.textContent = 'Enviar'
+		}
+	})
+</script>
+
+<style>
+	/* Flecha propia para el select, en blanco y negro */
+	select {
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.2'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 0.25rem center;
+	}
+	select option {
+		background: var(--card);
+		color: var(--foreground);
+	}
+</style>

@@ -9,6 +9,9 @@ export const site = {
 		'Samuel Ramirez — coreógrafo, artista contemporáneo y director de movimiento. Coreografía, danza, dirección creativa, dirección de arte y proyectos culturales.',
 	// ID del video de YouTube del reel (lo que va después de youtu.be/)
 	reelYoutubeId: 'gRCCaDovSAM',
+	// Servicio que recibe el formulario de contacto (ej. https://formspree.io/f/xxxx).
+	// Vacío = el formulario abre el correo del visitante con todo ya escrito.
+	formEndpoint: '',
 	// TODO: datos reales de contacto
 	email: 'hola@samuelramirez.com',
 	whatsapp: '', // ej. '5215512345678' (sin + ni espacios)
