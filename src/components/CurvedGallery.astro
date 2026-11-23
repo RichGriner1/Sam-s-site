@@ -92,28 +92,8 @@ const info = proyectos.map((p) => ({
 									<div class={`cg-tone cg-tone-${k % 6} absolute inset-0`} />
 								)}
 							</div>
-							{/* Capa 2: copia diminuta = desenfoque barato. Su máscara va en degradado
-							    dentro de cada tira, así el desenfoque crece sin escalones. */}
-							{p.data.cover && (
-								<div class="cg-softwrap absolute inset-0 overflow-hidden">
-									<div class="cg-face" data-cg-face>
-										<Image
-											src={p.data.cover}
-											alt=""
-											width={24}
-											loading="eager"
-											fetchpriority="low"
-											decoding="async"
-											draggable="false"
-											class="absolute inset-0 size-full object-cover"
-										/>
-									</div>
-								</div>
-							)}
 							{/* Capa 3: solo el borde fino de la tarjeta activa (sin texto: el título va abajo) */}
 							<div class="cg-face cg-face-top" data-cg-face />
-							{/* Capa 4: lavado hacia el fondo, en degradado continuo de tira a tira */}
-							<div class="cg-wash pointer-events-none absolute inset-0" />
 						</div>
 					))}
 				</a>
@@ -303,19 +283,6 @@ const info = proyectos.map((p) => ({
 			const i = Math.floor(x)
 			return i >= pts.length - 1 ? 1 : pts[i] + (pts[i + 1] - pts[i]) * (x - i)
 		}
-		// Énfasis por tarjeta, animado en el tiempo (no por posición)
-		const emState = cards.map(() => ({ from: 0, to: 0, start: 0, cur: 0 }))
-		function emphasis(k: number, want: boolean) {
-			const st = emState[k]
-			const to = want ? 1 : 0
-			const now = performance.now()
-			if (st.to !== to) Object.assign(st, { from: st.cur, to, start: now })
-			const ms = to ? 1000 : 450
-			const u = Math.min(1, (now - st.start) / ms)
-			const e = to ? easeOutSpring(u) : smooth(u)
-			st.cur = st.from + (st.to - st.from) * e
-			return st.cur
-		}
 		type Curve = { ease: (u: number) => number; ms: number }
 		const OUT_SPRING: Curve = { ease: easeOutSpring, ms: 1000 }
 		const IN_OUT_SPRING: Curve = { ease: (u) => sample(IN_OUT_PTS, u), ms: 1500 }
@@ -328,13 +295,11 @@ const info = proyectos.map((p) => ({
 		// el centro queda nítido, y al estirarse en los lados se vuelve neblina.
 		// Valores cuantizados: solo se escribe cuando cambian.
 		const lastEdge = strips.map((l) => l.map(() => -1))
-		const smooth = (x: number) => x * x * (3 - 2 * x)
 
 		function render() {
 			let best = Infinity
 			let active = 0
 			const half = w / 2
-			const calm = cardW * 0.6 // zona central sin efecto
 			cards.forEach((card, k) => {
 				const s = wrap(k * step - pos)
 				if (Math.abs(s) < best) {
@@ -350,14 +315,8 @@ const info = proyectos.map((p) => ({
 					rcards[k].style.visibility = away ? 'hidden' : ''
 				}
 				if (away) return
-				const isCenter = Math.abs(s) < step / 2
-				// Énfasis del centro: cuando una tarjeta se asienta en el medio crece ~7% y sube
-				// un poco con --ease-out-spring; al irse vuelve con un ease-in-out corto.
-				const em = emphasis(k, Math.abs(s) < step * 0.25)
-				const m = 1 + 0.07 * em
-				const lift = -(m - 1) * (cardH / 2) - 10 * em
 				strips[k].forEach((el, i) => {
-					const sc = s + (-cardW / 2 + (i + 0.5) * stripW) * m
+					const sc = s - cardW / 2 + (i + 0.5) * stripW
 					const t = sc / R
 					const x = R * Math.sin(t)
 					const z = R * (1 - Math.cos(t))
@@ -370,32 +329,14 @@ const info = proyectos.map((p) => ({
 						}
 						return
 					}
-					// Efecto según qué tan cerca del borde de pantalla cae cada lado de la tira.
-					// La tarjeta más cercana al centro nunca recibe efecto: siempre limpia.
-					const edgeAt = (scx: number) => {
-						if (isCenter) return 0
-						const tt = scx / R
-						const sx = (R * Math.sin(tt) * P) / (P - R * (1 - Math.cos(tt)))
-						return smooth(Math.min(1, Math.max(0, (Math.abs(sx) - calm) / (half - calm))))
-					}
-					const eL = Math.round(edgeAt(sc - stripW / 2) * 30) / 30
-					const eR = Math.round(edgeAt(sc + stripW / 2) * 30) / 30
-					const key = eL * 1000 + eR
-					if (lastEdge[k][i] !== key) {
+					if (lastEdge[k][i] !== 0) {
 						el.style.visibility = ''
 						rstrips[k][i].style.visibility = ''
-						// sin efecto: las capas de desenfoque y lavado ni se pintan
-						el.toggleAttribute('data-fx', eL + eR > 0)
-						el.style.setProperty('--sl', String(Math.min(0.6, eL * 0.8)))
-						el.style.setProperty('--sr', String(Math.min(0.6, eR * 0.8)))
-						el.style.setProperty('--wl', `${Math.round(eL * 28)}%`)
-						el.style.setProperty('--wr', `${Math.round(eR * 28)}%`)
-						lastEdge[k][i] = key
+						lastEdge[k][i] = 0
 					}
-					el.style.transform = `translate3d(${x - stripW / 2}px, ${-cardH * 0.62 + lift}px, ${z}px) rotateY(${-t}rad) scale(${m})`
-					// El reflejo no copia el énfasis: se queda quieto sobre el "piso"
-					const t0 = (s + (-cardW / 2 + (i + 0.5) * stripW)) / R
-					rstrips[k][i].style.transform = `translate3d(${R * Math.sin(t0) - stripW / 2}px, ${-cardH * 0.62}px, ${R * (1 - Math.cos(t0))}px) rotateY(${-t0}rad)`
+					const tf = `translate3d(${x - stripW / 2}px, ${-cardH * 0.62}px, ${z}px) rotateY(${-t}rad)`
+					el.style.transform = tf
+					rstrips[k][i].style.transform = tf
 				})
 			})
 			setActive(active)
@@ -635,21 +576,6 @@ const info = proyectos.map((p) => ({
 	.cg-tone-4 { background: radial-gradient(100% 60% at 50% 100%, oklch(97% 0 0), oklch(78% 0 0)); }
 	.cg-tone-5 { background: linear-gradient(200deg, oklch(90% 0 0), oklch(66% 0 0) 85%); }
 
-	/* Brillo de color en los lados (tipo RGB difuso), suave y solo en los bordes:
-	   tiñe las tarjetas que se estiran sin tocar la del centro */
-	.cg-clip::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		mix-blend-mode: multiply;
-		background:
-			radial-gradient(22% 42% at 0% 48%, oklch(82% 0.1 350 / 0.32), transparent 75%),
-			radial-gradient(18% 32% at 3% 62%, oklch(84% 0.08 300 / 0.22), transparent 75%),
-			radial-gradient(22% 42% at 100% 48%, oklch(85% 0.09 210 / 0.32), transparent 75%),
-			radial-gradient(18% 32% at 97% 62%, oklch(86% 0.08 160 / 0.2), transparent 75%);
-	}
-
 	/* Reflejo de agua: tenue, ondulado y desvaneciéndose hacia abajo */
 	.cg-reflect {
 		opacity: 0.28;
@@ -668,34 +594,17 @@ const info = proyectos.map((p) => ({
 	.cg-clip::before {
 		content: '';
 		position: absolute;
-		inset: 0 10% 30%;
-		background: radial-gradient(45% 40% at 50% 45%, oklch(100% 0 0 / 0.35), transparent 70%);
+		/* luz blanca suave al centro + color tenue en los lados, siempre DETRÁS de las fotos */
+		inset: 0;
+		background:
+			radial-gradient(45% 40% at 50% 45%, oklch(100% 0 0 / 0.35), transparent 70%),
+			radial-gradient(22% 42% at 0% 48%, oklch(82% 0.1 350 / 0.35), transparent 75%),
+			radial-gradient(22% 42% at 100% 48%, oklch(85% 0.09 210 / 0.35), transparent 75%);
 		pointer-events: none;
 	}
 
-	.cg-strip {
-		--sl: 0;
-		--sr: 0;
-		--wl: 0%;
-		--wr: 0%;
-	}
 	.cg-face-top {
 		background: transparent;
-	}
-	.cg-strip:not([data-fx]) .cg-softwrap,
-	.cg-strip:not([data-fx]) .cg-wash {
-		display: none;
-	}
-	.cg-softwrap {
-		mask-image: linear-gradient(to right, rgb(0 0 0 / var(--sl)), rgb(0 0 0 / var(--sr)));
-	}
-	/* Lavado hacia el color de la sección: continuo entre tiras, sin "paneles" */
-	.cg-wash {
-		background: linear-gradient(
-			to right,
-			color-mix(in oklab, var(--background) var(--wl), transparent),
-			color-mix(in oklab, var(--background) var(--wr), transparent)
-		);
 	}
 
 	/* El proyecto activo: borde de luz fino para que se sepa cuál estás viendo */
