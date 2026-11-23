@@ -1,57 +1,86 @@
 ---
+// Sobre mí en el inicio: versión corta y fácil de leer. "Leer bio completa" abre
+// la biografía entera en un diálogo (BioModal).
 import Media from './Media.astro'
 import retrato from '../assets/sobre-mi.jpg'
 
-// TODO: reemplazar con la bio, cifras y colaboradores reales
-const cifras = [
-	{ value: '10+', label: 'años de trayectoria' },
-	{ value: '50+', label: 'proyectos realizados' },
-	{ value: '6', label: 'disciplinas' }
+const datos = [
+	{ label: 'Base', value: 'República Dominicana / Madrid' },
+	{ label: 'Formación', value: 'Artes Visuales y Danza (URJC) · Máster en Gestión Cultural (UCM)' },
+	{ label: 'Proyectos en', value: 'República Dominicana, Haití, Colombia y España' }
 ]
-const colaboradores = ['Institución', 'Festival', 'Marca', 'Compañía', 'Museo', 'Productora']
+const colaboradores = [
+	'Matadero Madrid',
+	'La Casa Encendida',
+	'Teatro Pradillo',
+	'Lenis Rodríguez',
+	'Osikán',
+	'Espacio Afro'
+]
 ---
 
 <section id="sobre-mi" class="scroll-mt-16 border-t border-border">
-	<div class="container-site grid gap-12 py-24 sm:py-32 md:grid-cols-2 md:gap-16">
+	<div class="container-site grid items-center gap-12 py-24 sm:py-32 md:grid-cols-2 md:gap-16">
 		<Media
 			src={retrato}
-			alt="Samuel Ramirez sonriendo durante un ensayo, en blanco y negro"
+			alt="Samuel Ramírez sonriendo durante un ensayo, en blanco y negro"
 			class="fade-in aspect-[4/5]"
 		/>
 
-		<div class="md:pt-12">
+		<div>
 			<p class="eyebrow fade-in">Sobre mí</p>
-			<h2 class="fade-in fade-in-d1 mt-6 font-display text-4xl leading-tight sm:text-5xl">
-				Creo experiencias donde el cuerpo, la imagen y la comunidad se encuentran.
+			<h2
+				class="fade-in fade-in-d1 mt-3 max-w-xl font-display text-4xl leading-[1.08] text-balance sm:text-5xl"
+			>
+				El cuerpo, la memoria y la comunidad como materia de creación.
 			</h2>
-			<div class="fade-in fade-in-d2 mt-8 space-y-4 text-muted-foreground">
+			<div class="fade-in fade-in-d2 mt-6 max-w-xl space-y-4 text-muted-foreground">
 				<p>
-					Texto de ejemplo. Aquí va la bio de Samuel: de dónde viene, cómo empezó y qué lo mueve.
-					Dos o tres párrafos cortos, en primera persona.
+					Artista dominicano residente en Madrid. Trabaja entre la danza, la performance, las artes
+					visuales y la dirección creativa para crear piezas, campañas y experiencias que ponen el
+					cuerpo en el centro.
 				</p>
 				<p>
-					Texto de ejemplo. Su formación, compañías, festivales y lugares donde ha presentado su
-					trabajo.
+					Su trabajo ha pasado por Matadero Madrid, La Casa Encendida y Teatro Pradillo, y es
+					director creativo y coreógrafo de la artista Lenis Rodríguez.
 				</p>
 			</div>
 
-			<dl class="fade-in fade-in-d3 mt-12 grid grid-cols-3 gap-6 border-t border-border pt-8">
+			<dl class="fade-in fade-in-d3 mt-8 divide-y divide-border border-y border-border">
 				{
-					cifras.map((c) => (
-						<div>
-							<dt class="sr-only">{c.label}</dt>
-							<dd class="font-display text-4xl sm:text-5xl">{c.value}</dd>
-							<dd class="mt-1 text-xs text-muted-foreground sm:text-sm">{c.label}</dd>
+					datos.map((d) => (
+						<div class="grid gap-1 py-3 sm:grid-cols-[8rem_1fr] sm:gap-4">
+							<dt class="eyebrow pt-0.5">{d.label}</dt>
+							<dd class="text-sm">{d.value}</dd>
 						</div>
 					))
 				}
 			</dl>
+
+			<div class="fade-in fade-in-d4 mt-8 flex flex-wrap gap-3">
+				<button
+					type="button"
+					data-modal-open="bio"
+					class="inline-flex h-11 items-center rounded-lg border border-foreground/70 px-6 text-xs tracking-[0.2em] uppercase transition-colors hover:bg-foreground hover:text-background"
+				>
+					Leer bio completa
+				</button>
+				<button
+					type="button"
+					data-modal-open="contacto"
+					class="inline-flex h-11 items-center rounded-lg bg-foreground px-6 text-xs tracking-[0.2em] text-background uppercase transition-opacity hover:opacity-85"
+				>
+					Trabajemos juntos
+				</button>
+			</div>
 		</div>
 	</div>
 
 	<div class="container-site border-t border-border py-12">
-		<p class="eyebrow">Ha colaborado con</p>
-		<ul class="mt-6 flex flex-wrap gap-x-10 gap-y-4 font-display text-2xl text-muted-foreground sm:text-3xl">
+		<p class="eyebrow">Ha trabajado con</p>
+		<ul
+			class="mt-5 flex flex-wrap gap-x-10 gap-y-3 font-display text-2xl text-muted-foreground sm:text-3xl"
+		>
 			{colaboradores.map((c) => <li>{c}</li>)}
 		</ul>
 	</div>

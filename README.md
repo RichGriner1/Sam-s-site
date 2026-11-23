@@ -1,4 +1,4 @@
-# Samuel Ramirez — Portafolio
+# Samuel Ramírez — Portafolio
 
 Sitio en español. Astro + Tailwind, blanco y negro (el color lo ponen los proyectos).
 

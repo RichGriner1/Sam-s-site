@@ -1,12 +1,12 @@
 // Datos generales del sitio. Todo el texto editable vive aquí o en src/content/proyectos.
 
 export const site = {
-	name: 'Samuel Ramirez',
-	title: 'Coreógrafo, artista contemporáneo y director de movimiento',
+	name: 'Samuel Ramírez',
+	title: 'Artista contemporáneo, coreógrafo, director creativo, performer, bailarín',
 	// TODO: frase final — "Artista multidisciplinario que…"
 	tagline: 'Artista multidisciplinario que crea desde el cuerpo, el espacio y la comunidad.',
 	description:
-		'Samuel Ramirez — coreógrafo, artista contemporáneo y director de movimiento. Coreografía, danza, dirección creativa, dirección de arte y proyectos culturales.',
+		'Samuel Ramírez — artista contemporáneo, coreógrafo, director creativo, performer y bailarín. Coreografía, danza, dirección creativa, dirección de arte y proyectos culturales.',
 	// ID del video de YouTube del reel (lo que va después de youtu.be/)
 	reelYoutubeId: 'gRCCaDovSAM',
 	// Video de fondo del hero: qué tramo del reel se repite (en segundos).

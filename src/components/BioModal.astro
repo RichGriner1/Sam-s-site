@@ -1,0 +1,100 @@
+---
+// Biografía completa en un diálogo (id "bio"). Ordenada para quien quiere contratar:
+// primero quién es y qué hace, luego qué puede hacer por tu proyecto, y al final
+// la trayectoria y un botón para escribirle.
+import { Image } from 'astro:assets'
+import Modal from './Modal.astro'
+import retrato from '../assets/sobre-mi.jpg'
+
+const servicios = [
+	'Dirección creativa y coreografía para artistas y videoclips',
+	'Piezas escénicas y performance para museos, festivales e instituciones',
+	'Movimiento para campañas, moda y cámara',
+	'Mediación cultural y proyectos con comunidades'
+]
+const trayectoria = [
+	{ label: 'Formación', value: 'Artes Visuales y Danza, Universidad Rey Juan Carlos (URJC). Máster en Gestión Cultural e Innovación Social, Universidad Complutense de Madrid (UCM).' },
+	{ label: 'Espacios', value: 'Matadero Madrid, La Casa Encendida, Teatro Pradillo.' },
+	{ label: 'Territorios', value: 'Iniciativas artísticas y comunitarias en República Dominicana, Haití, Colombia y España.' },
+	{ label: 'Artista asociado', value: 'Osikán – Vivero de Creación e Imaginación Social · Espacio Afro.' }
+]
+---
+
+<Modal
+	id="bio"
+	label="Biografía de Samuel Ramírez"
+	class="grid max-h-[86svh] w-[min(94vw,640px)] overflow-hidden glass-panel shadow-2xl md:w-[min(94vw,1040px)] md:grid-cols-[1fr_1.4fr]"
+>
+	<div class="relative hidden md:block" aria-hidden="true">
+		<Image
+			src={retrato}
+			alt=""
+			widths={[500, 900]}
+			sizes="420px"
+			width={retrato.width}
+			height={retrato.height}
+			loading="lazy"
+			decoding="async"
+			class="absolute inset-0 size-full object-cover"
+		/>
+	</div>
+
+	<div class="max-h-[86svh] overflow-y-auto overscroll-contain p-6 sm:p-10">
+		<p class="eyebrow">Sobre Samuel</p>
+		<h2 class="mt-3 font-display text-4xl leading-none sm:text-5xl">Samuel Ramírez</h2>
+		<p class="mt-3 text-sm text-muted-foreground">
+			Artista contemporáneo, director creativo, coreógrafo y mediador cultural · República
+			Dominicana / Madrid
+		</p>
+
+		<div class="mt-7 space-y-4 text-[0.95rem] leading-relaxed text-foreground/85">
+			<p>
+				Samuel Ramírez es un artista contemporáneo dominicano residente en Madrid. Su práctica cruza
+				la danza, la performance, las artes visuales, la dirección creativa y la creación escénica, y
+				usa el cuerpo, la imagen, el movimiento y la palabra como herramientas para crear y comunicar.
+			</p>
+			<p>
+				Trabaja como artista, coreógrafo y director creativo, en procesos abiertos a la colaboración
+				entre disciplinas. Entre sus proyectos está la dirección creativa y coreografía de la artista
+				Lenis Rodríguez.
+			</p>
+			<p>
+				Su investigación gira en torno al cuerpo, la identidad, la memoria, el territorio y la
+				comunidad. Desde la improvisación y los procesos colaborativos busca abrir otros imaginarios
+				y nuevas formas de encuentro.
+			</p>
+			<p>
+				En paralelo desarrolla mediación cultural, gestión e innovación social, conectando prácticas
+				artísticas, comunidades e instituciones.
+			</p>
+		</div>
+
+		<p class="eyebrow mt-9">Qué puede hacer por tu proyecto</p>
+		<ul class="mt-3 divide-y divide-border border-y border-border text-sm">
+			{servicios.map((s) => <li class="py-3">{s}</li>)}
+		</ul>
+
+		<p class="eyebrow mt-9">Trayectoria</p>
+		<dl class="mt-3 space-y-4 text-sm">
+			{
+				trayectoria.map((t) => (
+					<div class="grid gap-1 sm:grid-cols-[9rem_1fr] sm:gap-4">
+						<dt class="text-muted-foreground">{t.label}</dt>
+						<dd>{t.value}</dd>
+					</div>
+				))
+			}
+		</dl>
+
+		<div class="mt-9 flex flex-col gap-4 border-t border-border pt-7 sm:flex-row sm:items-center sm:justify-between">
+			<p class="font-display text-2xl leading-tight">¿Tienes un proyecto en mente?</p>
+			<button
+				type="button"
+				data-modal-open="contacto"
+				class="inline-flex h-11 shrink-0 items-center justify-center self-start rounded-lg bg-foreground px-6 text-xs tracking-[0.2em] text-background uppercase transition-opacity hover:opacity-85 sm:self-auto"
+			>
+				Trabajemos juntos →
+			</button>
+		</div>
+	</div>
+</Modal>

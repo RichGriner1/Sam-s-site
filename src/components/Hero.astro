@@ -295,13 +295,7 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 		scale: 0.5;
 		transition:
 			opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
-			scale 600ms
-				linear(
-					0, 0.0239, 0.0835, 0.1658, 0.2602, 0.3592, 0.4569, 0.5496, 0.6345, 0.7103, 0.7763,
-					0.8326, 0.8796, 0.9179, 0.9484, 0.9722, 0.9901, 1.0032, 1.0122, 1.018, 1.0213, 1.0227,
-					1.0227, 1.0217, 1.02, 1.018, 1.0157, 1.0135, 1.0113, 1.0092, 1.0074, 1.0058, 1.0044,
-					1.0032, 1.0023, 1.0015, 1.0009, 1.0004, 1, 0.9998, 1
-				);
+			scale var(--dur-out-spring) var(--ease-out-spring);
 	}
 	@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
 		.hero[data-cursor]:not(:has(.hero-button:hover)) .hero-cursor {

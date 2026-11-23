@@ -7,7 +7,7 @@ import { Image } from 'astro:assets'
 import { getProyectos } from '$lib/proyectos'
 import { getDisciplina } from '../data/site'
 
-const STRIPS = 14
+const STRIPS = 16
 
 // En la pared solo van los destacados (máx. 5); "Ver todos" abre la lista completa
 const todos = await getProyectos()
@@ -27,7 +27,7 @@ const info = proyectos.map((p) => ({
 }))
 ---
 
-<section id="proyectos" class="cg-light relative scroll-mt-16 overflow-hidden bg-background pt-20 pb-24 text-foreground sm:pt-24 sm:pb-32" aria-labelledby="cg-title">
+<section id="proyectos" data-tone="light" class="cg-light relative scroll-mt-16 overflow-hidden bg-background pt-20 pb-24 text-foreground sm:pt-24 sm:pb-32" aria-labelledby="cg-title">
 	<div class="container-site">
 		<p class="eyebrow fade-in">Trabajo seleccionado</p>
 		<div class="mt-3 flex items-baseline justify-between gap-6">
@@ -45,7 +45,7 @@ const info = proyectos.map((p) => ({
 	</div>
 
 	<!-- Recorte: las tarjetas que se estiran en los bordes no invaden el título -->
-	<div class="cg-clip mt-4 overflow-hidden sm:mt-6">
+	<div class="cg-clip relative mt-6 overflow-hidden sm:mt-10">
 	<div
 		class="cg-stage relative w-full touch-pan-y select-none"
 		data-cg
@@ -69,7 +69,10 @@ const info = proyectos.map((p) => ({
 					draggable="false"
 				>
 					{Array.from({ length: STRIPS }, (_, i) => (
+						// Imágenes "eager": con lazy, el navegador no detecta bien las tiras en 3D y
+						// algunas nunca cargaban. Todas comparten la misma URL, así que se descargan una vez.
 						<div class="cg-strip" data-cg-strip data-i={i} aria-hidden="true">
+							{/* Capa 1: la imagen */}
 							<div class="cg-face" data-cg-face>
 								{p.data.cover ? (
 									<Image
@@ -79,7 +82,8 @@ const info = proyectos.map((p) => ({
 										sizes="440px"
 										width={p.data.cover.width}
 										height={p.data.cover.height}
-										loading="lazy"
+										loading="eager"
+										fetchpriority="low"
 										decoding="async"
 										draggable="false"
 										class="absolute inset-0 size-full object-cover"
@@ -87,36 +91,80 @@ const info = proyectos.map((p) => ({
 								) : (
 									<div class={`cg-tone cg-tone-${k % 6} absolute inset-0`} />
 								)}
-								{/* Copia diminuta = desenfoque barato; aparece en las tarjetas de los lados */}
-								{p.data.cover && (
-									<Image
-										src={p.data.cover}
-										alt=""
-										width={24}
-										loading="lazy"
-										decoding="async"
-										draggable="false"
-										class="cg-soft absolute inset-0 size-full object-cover"
-									/>
-								)}
-								<div class="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
-								<span class="cg-text absolute top-4 right-4 text-xs text-foreground/70 tabular-nums">
-									{p.data.year}
-								</span>
-								<span class="cg-text absolute right-5 bottom-5 left-5 font-display text-[2.2em] leading-[0.95]">
-									{p.data.title}
-								</span>
-								<div class="cg-dim absolute inset-0 bg-background" />
-								<div class="cg-haze absolute inset-0" />
 							</div>
+							{/* Capa 2: copia diminuta = desenfoque barato. Su máscara va en degradado
+							    dentro de cada tira, así el desenfoque crece sin escalones. */}
+							{p.data.cover && (
+								<div class="cg-softwrap absolute inset-0 overflow-hidden">
+									<div class="cg-face" data-cg-face>
+										<Image
+											src={p.data.cover}
+											alt=""
+											width={24}
+											loading="eager"
+											fetchpriority="low"
+											decoding="async"
+											draggable="false"
+											class="absolute inset-0 size-full object-cover"
+										/>
+									</div>
+								</div>
+							)}
+							{/* Capa 3: solo el borde fino de la tarjeta activa (sin texto: el título va abajo) */}
+							<div class="cg-face cg-face-top" data-cg-face />
+							{/* Capa 4: lavado hacia el fondo, en degradado continuo de tira a tira */}
+							<div class="cg-wash pointer-events-none absolute inset-0" />
 						</div>
 					))}
 				</a>
 			))
 		}
-		<!-- reflejo de piso -->
-		<div class="cg-floor pointer-events-none absolute inset-x-0 bottom-0 h-1/4" aria-hidden="true"></div>
 	</div>
+		<!-- Reflejo de agua: una copia simple de la pared, volteada bajo el "piso" y pasada por
+		     un filtro de ondas. Las tiras copian la posición de las de arriba en cada cuadro. -->
+		<div class="cg-reflect pointer-events-none absolute inset-x-0 overflow-hidden" aria-hidden="true" data-cg-reflect>
+			<div class="cg-reflect-stage absolute inset-x-0" data-cg-reflect-stage>
+				{
+					cards.map((p, k) => (
+						<div class="cg-card" data-cg-rcard>
+							{Array.from({ length: STRIPS }, (_, i) => (
+								<div class="cg-strip" data-cg-rstrip data-i={i}>
+									<div class="cg-face" data-cg-rface>
+										{p.data.cover ? (
+											<Image
+												src={p.data.cover}
+												alt=""
+												width={400}
+												loading="eager"
+												fetchpriority="low"
+												decoding="async"
+												draggable="false"
+												class="absolute inset-0 size-full object-cover"
+											/>
+										) : (
+											<div class={`cg-tone cg-tone-${k % 6} absolute inset-0`} />
+										)}
+									</div>
+								</div>
+							))}
+						</div>
+					))
+				}
+			</div>
+		</div>
+		<svg class="absolute size-0" aria-hidden="true">
+			<filter id="cg-water" x="-5%" y="-10%" width="110%" height="120%">
+				<feTurbulence type="fractalNoise" baseFrequency="0.004 0.06" numOctaves="2" seed="7" result="ondas">
+					<animate attributeName="baseFrequency" dur="14s" values="0.004 0.06;0.005 0.075;0.004 0.06" repeatCount="indefinite" />
+				</feTurbulence>
+				<feDisplacementMap in="SourceGraphic" in2="ondas" scale="10" xChannelSelector="R" yChannelSelector="G" />
+				<feGaussianBlur stdDeviation="0.8" />
+			</filter>
+		</svg>
+
+		<!-- Fuera de la escena 3D: si estuvieran dentro, se "pelean" en profundidad con la
+		     tarjeta del centro y aparece una línea clara. -->
+		<div class="cg-floor pointer-events-none absolute inset-x-0 bottom-0 h-1/6" aria-hidden="true"></div>
 	</div>
 
 	<div class="container-site mt-8 grid items-end gap-6 sm:mt-10 sm:grid-cols-[1fr_auto]">
@@ -139,13 +187,13 @@ const info = proyectos.map((p) => ({
 			</span>
 			<button
 				type="button"
-				class="grid size-12 place-items-center rounded-lg border border-border transition-colors hover:border-foreground"
+				class="cg-arrow grid size-12 place-items-center rounded-lg border border-border hover:border-foreground"
 				aria-label="Proyecto anterior"
 				data-cg-prev>←</button
 			>
 			<button
 				type="button"
-				class="grid size-12 place-items-center rounded-lg border border-border transition-colors hover:border-foreground"
+				class="cg-arrow grid size-12 place-items-center rounded-lg border border-border hover:border-foreground"
 				aria-label="Proyecto siguiente"
 				data-cg-next>→</button
 			>
@@ -165,6 +213,11 @@ const info = proyectos.map((p) => ({
 		const cards = [...stage.querySelectorAll<HTMLAnchorElement>('[data-cg-card]')]
 		const strips = cards.map((c) => [...c.querySelectorAll<HTMLElement>('[data-cg-strip]')])
 		const faces = cards.map((c) => [...c.querySelectorAll<HTMLElement>('[data-cg-face]')])
+		const reflect = document.querySelector<HTMLElement>('[data-cg-reflect]')!
+		const reflectStage = document.querySelector<HTMLElement>('[data-cg-reflect-stage]')!
+		const rcards = [...reflectStage.querySelectorAll<HTMLElement>('[data-cg-rcard]')]
+		const rstrips = rcards.map((c) => [...c.querySelectorAll<HTMLElement>('[data-cg-rstrip]')])
+		const rfaces = [...reflectStage.querySelectorAll<HTMLElement>('[data-cg-rface]')]
 		const N = strips[0]?.length ?? 1
 		const link = document.querySelector<HTMLAnchorElement>('[data-cg-link]')!
 		const titleEl = document.querySelector<HTMLElement>('[data-cg-title]')!
@@ -176,7 +229,7 @@ const info = proyectos.map((p) => ({
 		// La pared es un cilindro visto desde muy cerca de su borde frontal:
 		// con la perspectiva apenas mayor que el radio, las tarjetas de los lados
 		// pasan casi junto a la cámara y se estiran, como en un lente.
-		const tune = { radius: 0.3, radiusMobile: 0.95, persp: 1.03, perspMobile: 1.08 }
+		const tune = { radius: 0.4, radiusMobile: 0.95, persp: 1.5, perspMobile: 1.2 }
 		let w = 0
 		let cardW = 0
 		let cardH = 0
@@ -189,23 +242,39 @@ const info = proyectos.map((p) => ({
 		function layout() {
 			w = stage.clientWidth
 			const mobile = w < 768
-			cardW = mobile ? w * 0.62 : Math.min(Math.max(w * 0.19, 240), 340)
+			cardW = mobile ? w * 0.64 : Math.min(Math.max(w * 0.22, 260), 380)
 			cardH = cardW * 1.3
 			step = cardW * (mobile ? 1.1 : 1.14)
 			total = step * cards.length
 			R = Math.max(w * (mobile ? tune.radiusMobile : tune.radius), cardW * 1.3)
 			P = R * (mobile ? tune.perspMobile : tune.persp)
 			stage.style.perspective = `${P}px`
-			stage.style.height = `${cardH * (mobile ? 1.35 : 1.45)}px`
+			const H = cardH * (mobile ? 1.45 : 1.6)
+			stage.style.height = `${H}px`
+			// El "piso" pasa por la base de la tarjeta del centro; el reflejo se voltea ahí
+			const floorY = H / 2 + cardH * 0.38
+			reflect.style.top = `${floorY}px`
+			reflect.style.height = `${H - floorY}px`
+			reflectStage.style.top = `${-floorY}px`
+			reflectStage.style.height = `${H}px`
+			reflectStage.style.transformOrigin = `50% ${floorY}px`
+			reflectStage.style.perspective = `${P}px`
 			stage.style.fontSize = `${cardW / 22}px`
 			stripW = cardW / N
 			for (const list of faces)
-				list.forEach((f, i) => {
+				list.forEach((f) => {
+					const i = Number(f.closest<HTMLElement>('[data-cg-strip]')!.dataset.i)
 					f.style.width = `${cardW}px`
 					f.style.height = `${cardH}px`
 					f.style.left = `${-i * stripW}px`
 				})
-			for (const list of strips)
+			for (const f of rfaces) {
+				const i = Number(f.closest<HTMLElement>('[data-cg-rstrip]')!.dataset.i)
+				f.style.width = `${cardW}px`
+				f.style.height = `${cardH}px`
+				f.style.left = `${-i * stripW}px`
+			}
+			for (const list of [...strips, ...rstrips])
 				list.forEach((s) => {
 					s.style.width = `${stripW + 2.25}px` // solapa para que no se vean costuras
 					s.style.height = `${cardH}px`
@@ -220,6 +289,38 @@ const info = proyectos.map((p) => ({
 		let hovering = false
 		let lastInteraction = -Infinity
 		const DRIFT = reduce ? 0 : 0.045 // px por ms
+		// Curva --ease-out-spring (tokens.css) muestreada: se interpola entre puntos
+		const SPRING_PTS = [0, 0.1364, 0.2635, 0.3827, 0.4942, 0.5978, 0.6929, 0.7786, 0.854, 0.9174, 0.967, 0.9998, 1.012, 1.0109, 1.0097, 1.0085, 1.0072, 1.0059, 1.0047, 1.0036, 1.0025, 1.0015, 1.0007, 0.9999, 0.9993, 0.9988, 0.9984, 0.9981, 0.9979, 0.9978, 0.9977, 0.9977, 0.9978, 0.9979, 0.9981, 0.9983, 0.9985, 0.9987, 0.9989, 0.9991, 0.9993, 0.9995, 0.9996, 0.9998, 0.9999, 1, 1.0001, 1.0002, 1.0003, 1.0003, 1.0003, 1.0004, 1.0004, 1.0004, 1.0004, 1.0003, 1.0003, 1.0003, 1.0002, 1.0002, 1]
+		const easeOutSpring = (u: number) => {
+			const x = u * (SPRING_PTS.length - 1)
+			const i = Math.floor(x)
+			return i >= SPRING_PTS.length - 1 ? 1 : SPRING_PTS[i] + (SPRING_PTS[i + 1] - SPRING_PTS[i]) * (x - i)
+		}
+		// Curva --ease-in-out-spring: para las flechas cuando la pared está quieta
+		const IN_OUT_PTS = [0, 0.0034, 0.0138, 0.0315, 0.0568, 0.0899, 0.1307, 0.1791, 0.2346, 0.2963, 0.3631, 0.4336, 0.506, 0.5784, 0.6489, 0.7157, 0.7774, 0.8329, 0.8813, 0.9221, 0.9552, 0.9805, 0.9982, 1.0086, 1.012, 1.0105, 1.0089, 1.0072, 1.0055, 1.0039, 1.0025, 1.0012, 1.0002, 0.9993, 0.9986, 0.9982, 0.9979, 0.9977, 0.9977, 0.9978, 0.998, 0.9982, 0.9985, 0.9987, 0.999, 0.9993, 0.9995, 0.9997, 0.9999, 1.0001, 1.0002, 1.0003, 1.0003, 1.0004, 1.0004, 1.0004, 1.0003, 1.0003, 1.0003, 1.0002, 1]
+		const sample = (pts: number[], u: number) => {
+			const x = u * (pts.length - 1)
+			const i = Math.floor(x)
+			return i >= pts.length - 1 ? 1 : pts[i] + (pts[i + 1] - pts[i]) * (x - i)
+		}
+		// Énfasis por tarjeta, animado en el tiempo (no por posición)
+		const emState = cards.map(() => ({ from: 0, to: 0, start: 0, cur: 0 }))
+		function emphasis(k: number, want: boolean) {
+			const st = emState[k]
+			const to = want ? 1 : 0
+			const now = performance.now()
+			if (st.to !== to) Object.assign(st, { from: st.cur, to, start: now })
+			const ms = to ? 1000 : 450
+			const u = Math.min(1, (now - st.start) / ms)
+			const e = to ? easeOutSpring(u) : smooth(u)
+			st.cur = st.from + (st.to - st.from) * e
+			return st.cur
+		}
+		type Curve = { ease: (u: number) => number; ms: number }
+		const OUT_SPRING: Curve = { ease: easeOutSpring, ms: 1000 }
+		const IN_OUT_SPRING: Curve = { ease: (u) => sample(IN_OUT_PTS, u), ms: 1500 }
+		let nextCurve: Curve = OUT_SPRING
+		let tween = { from: 0, to: NaN, start: 0, curve: OUT_SPRING }
 
 		const wrap = (v: number) => ((((v + total / 2) % total) + total) % total) - total / 2
 
@@ -240,10 +341,23 @@ const info = proyectos.map((p) => ({
 					best = Math.abs(s)
 					active = Number(card.dataset.index)
 				}
-				card.toggleAttribute('data-active', Math.abs(s) < step * 0.2)
+				card.toggleAttribute('data-active', Math.abs(s) < step * 0.25)
+				// Tarjetas totalmente fuera de pantalla: ni se calculan
+				const away = Math.abs(s) - cardW / 2 > R * (Math.PI / 2)
+				if (away !== card.hasAttribute('data-away')) {
+					card.toggleAttribute('data-away', away)
+					card.style.visibility = away ? 'hidden' : ''
+					rcards[k].style.visibility = away ? 'hidden' : ''
+				}
+				if (away) return
 				const isCenter = Math.abs(s) < step / 2
+				// Énfasis del centro: cuando una tarjeta se asienta en el medio crece ~7% y sube
+				// un poco con --ease-out-spring; al irse vuelve con un ease-in-out corto.
+				const em = emphasis(k, Math.abs(s) < step * 0.25)
+				const m = 1 + 0.07 * em
+				const lift = -(m - 1) * (cardH / 2) - 10 * em
 				strips[k].forEach((el, i) => {
-					const sc = s - cardW / 2 + (i + 0.5) * stripW
+					const sc = s + (-cardW / 2 + (i + 0.5) * stripW) * m
 					const t = sc / R
 					const x = R * Math.sin(t)
 					const z = R * (1 - Math.cos(t))
@@ -251,42 +365,66 @@ const info = proyectos.map((p) => ({
 					if (Math.abs(t) > Math.PI / 2 || z > P * 0.97 || Math.abs(screenX) > half * 1.25) {
 						if (lastEdge[k][i] !== -2) {
 							el.style.visibility = 'hidden'
+							rstrips[k][i].style.visibility = 'hidden'
 							lastEdge[k][i] = -2
 						}
 						return
 					}
-					// La tarjeta más cercana al centro nunca recibe neblina: siempre limpia
-					const e = isCenter
-						? 0
-						: smooth(Math.min(1, Math.max(0, (Math.abs(screenX) - calm) / (half - calm))))
-					const q = Math.round(e * 20) / 20
-					if (lastEdge[k][i] !== q) {
-						el.style.visibility = ''
-						el.style.setProperty('--soft', String(Math.min(1, q * 1.3)))
-						el.style.setProperty('--dim', String(q * 0.45))
-						lastEdge[k][i] = q
+					// Efecto según qué tan cerca del borde de pantalla cae cada lado de la tira.
+					// La tarjeta más cercana al centro nunca recibe efecto: siempre limpia.
+					const edgeAt = (scx: number) => {
+						if (isCenter) return 0
+						const tt = scx / R
+						const sx = (R * Math.sin(tt) * P) / (P - R * (1 - Math.cos(tt)))
+						return smooth(Math.min(1, Math.max(0, (Math.abs(sx) - calm) / (half - calm))))
 					}
-					el.style.transform = `translate3d(${x - stripW / 2}px, ${-cardH * 0.62}px, ${z}px) rotateY(${-t}rad)`
+					const eL = Math.round(edgeAt(sc - stripW / 2) * 30) / 30
+					const eR = Math.round(edgeAt(sc + stripW / 2) * 30) / 30
+					const key = eL * 1000 + eR
+					if (lastEdge[k][i] !== key) {
+						el.style.visibility = ''
+						rstrips[k][i].style.visibility = ''
+						// sin efecto: las capas de desenfoque y lavado ni se pintan
+						el.toggleAttribute('data-fx', eL + eR > 0)
+						el.style.setProperty('--sl', String(Math.min(0.6, eL * 0.8)))
+						el.style.setProperty('--sr', String(Math.min(0.6, eR * 0.8)))
+						el.style.setProperty('--wl', `${Math.round(eL * 28)}%`)
+						el.style.setProperty('--wr', `${Math.round(eR * 28)}%`)
+						lastEdge[k][i] = key
+					}
+					el.style.transform = `translate3d(${x - stripW / 2}px, ${-cardH * 0.62 + lift}px, ${z}px) rotateY(${-t}rad) scale(${m})`
+					// El reflejo no copia el énfasis: se queda quieto sobre el "piso"
+					const t0 = (s + (-cardW / 2 + (i + 0.5) * stripW)) / R
+					rstrips[k][i].style.transform = `translate3d(${R * Math.sin(t0) - stripW / 2}px, ${-cardH * 0.62}px, ${R * (1 - Math.cos(t0))}px) rotateY(${-t0}rad)`
 				})
 			})
 			setActive(active)
 		}
 
 		let current = -1
+		let swapTimer = 0
 		function setActive(i: number) {
 			if (i === current) return
 			current = i
 			const d = info[i]
 			link.href = `/proyectos/${d.id}`
 			link.dataset.modalOpen = `p-${d.id}`
-			titleEl.textContent = d.title
-			metaEl.textContent = `${d.year} · ${d.meta}`
 			countEl.textContent = `${String(i + 1).padStart(2, '0')} / ${String(count).padStart(2, '0')}`
+			// Cruce suave: el texto anterior sale hacia arriba y el nuevo entra con resorte
+			clearTimeout(swapTimer)
 			for (const el of [titleEl, metaEl]) {
 				el.classList.remove('is-in')
-				void el.offsetWidth
-				el.classList.add('is-in')
+				el.classList.add('is-out')
 			}
+			swapTimer = window.setTimeout(() => {
+				titleEl.textContent = d.title
+				metaEl.textContent = `${d.year} · ${d.meta}`
+				for (const el of [titleEl, metaEl]) {
+					el.classList.remove('is-out')
+					void el.offsetWidth
+					el.classList.add('is-in')
+				}
+			}, 170)
 		}
 
 		let last = performance.now()
@@ -295,10 +433,19 @@ const info = proyectos.map((p) => ({
 			last = now
 			if (!dragging) {
 				if (target !== null) {
-					// acercamiento suave hacia el objetivo (botones / foco)
-					const d = target - pos
-					pos += d * Math.min(1, dt * 0.009)
-					if (Math.abs(d) < 0.5) target = null
+					// Mismo movimiento que --ease-out-spring: llega en ~200ms y se asienta
+					// con un rebote de ~1% durante el resto del segundo.
+					if (tween.to !== target) {
+						tween = { from: pos, to: target, start: now, curve: nextCurve }
+						nextCurve = OUT_SPRING
+					}
+					const u = Math.min(1, (now - tween.start) / tween.curve.ms)
+					pos = tween.from + (tween.to - tween.from) * tween.curve.ease(u)
+					if (u >= 1) {
+						pos = target
+						target = null
+						vel = 0
+					}
 				} else {
 					pos += vel * dt
 					vel *= Math.pow(0.994, dt) // inercia
@@ -336,7 +483,11 @@ const info = proyectos.map((p) => ({
 			moved = Math.max(moved, Math.abs(e.clientX - startX))
 			// Solo "agarra" el puntero cuando ya es un arrastre: así un clic simple
 			// llega a la tarjeta y abre su diálogo.
-			if (moved > 6 && !stage.hasPointerCapture(e.pointerId)) stage.setPointerCapture(e.pointerId)
+			if (moved > 6 && !stage.hasPointerCapture(e.pointerId)) {
+				try {
+					stage.setPointerCapture(e.pointerId)
+				} catch {}
+			}
 			pos = startPos - (e.clientX - startX)
 			if (now > lastT) vel = -(e.clientX - lastX) / (now - lastT)
 			lastX = e.clientX
@@ -348,6 +499,8 @@ const info = proyectos.map((p) => ({
 			dragging = false
 			if (performance.now() - lastT > 80) vel = 0
 			lastInteraction = performance.now()
+			// Al soltar, el resorte lleva a la tarjeta más cercana en la dirección del gesto
+			if (moved > 6) target = Math.round((pos + vel * 180) / step) * step
 		}
 		stage.addEventListener('pointerup', endDrag)
 		stage.addEventListener('pointercancel', endDrag)
@@ -368,6 +521,7 @@ const info = proyectos.map((p) => ({
 		stage.addEventListener('pointerleave', () => (hovering = false))
 
 		// Scroll horizontal del trackpad (no secuestra el vertical)
+		let wheelTimer = 0
 		stage.addEventListener(
 			'wheel',
 			(e) => {
@@ -375,8 +529,12 @@ const info = proyectos.map((p) => ({
 				if (!dx) return
 				e.preventDefault()
 				target = null
+				vel = 0
 				pos += dx
 				lastInteraction = performance.now()
+				// cuando el trackpad se detiene, se acomoda en la tarjeta más cercana
+				clearTimeout(wheelTimer)
+				wheelTimer = window.setTimeout(() => (target = Math.round(pos / step) * step), 140)
 			},
 			{ passive: false }
 		)
@@ -384,8 +542,9 @@ const info = proyectos.map((p) => ({
 		// --- Botones y teclado ---
 		const goTo = (dir: number) => {
 			const base = target ?? pos
+			// Desde quieto: entra y sale suave (in-out). Si ya se mueve, sigue sin frenar.
+			nextCurve = target === null ? IN_OUT_SPRING : OUT_SPRING
 			target = Math.round(base / step) * step + dir * step
-			vel = 0
 			lastInteraction = performance.now()
 		}
 		document.querySelector('[data-cg-prev]')!.addEventListener('click', () => goTo(-1))
@@ -426,7 +585,8 @@ const info = proyectos.map((p) => ({
 
 	/* Borde superior difuminado para que el recorte no se vea como una línea */
 	.cg-clip {
-		mask-image: linear-gradient(to bottom, transparent, #000 7%);
+		isolation: isolate;
+		mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 82%, transparent);
 	}
 
 	.cg-stage {
@@ -463,7 +623,7 @@ const info = proyectos.map((p) => ({
 		border-radius: var(--radius);
 		background: var(--muted);
 	}
-	.cg-card:focus-visible .cg-face {
+	.cg-card:focus-visible .cg-face-top {
 		box-shadow: inset 0 0 0 2px var(--ring);
 	}
 
@@ -475,44 +635,71 @@ const info = proyectos.map((p) => ({
 	.cg-tone-4 { background: radial-gradient(100% 60% at 50% 100%, oklch(97% 0 0), oklch(78% 0 0)); }
 	.cg-tone-5 { background: linear-gradient(200deg, oklch(90% 0 0), oklch(66% 0 0) 85%); }
 
-	/* Reflejo en un piso brillante: cada tira se refleja debajo, así sigue la curva */
-	.cg-strip {
-		-webkit-box-reflect: below 10px
-			linear-gradient(to bottom, transparent 62%, oklch(0% 0 0 / 0.28) 100%);
+	/* Brillo de color en los lados (tipo RGB difuso), suave y solo en los bordes:
+	   tiñe las tarjetas que se estiran sin tocar la del centro */
+	.cg-clip::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		mix-blend-mode: multiply;
+		background:
+			radial-gradient(22% 42% at 0% 48%, oklch(82% 0.1 350 / 0.32), transparent 75%),
+			radial-gradient(18% 32% at 3% 62%, oklch(84% 0.08 300 / 0.22), transparent 75%),
+			radial-gradient(22% 42% at 100% 48%, oklch(85% 0.09 210 / 0.32), transparent 75%),
+			radial-gradient(18% 32% at 97% 62%, oklch(86% 0.08 160 / 0.2), transparent 75%);
 	}
+
+	/* Reflejo de agua: tenue, ondulado y desvaneciéndose hacia abajo */
+	.cg-reflect {
+		opacity: 0.28;
+		filter: url(#cg-water);
+		mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.95), rgb(0 0 0 / 0.5) 45%, transparent 95%);
+	}
+	.cg-reflect-stage {
+		transform: scaleY(-1);
+		transform-style: preserve-3d;
+	}
+
 	.cg-floor {
 		background: linear-gradient(to top, var(--background) 10%, transparent);
-		transform: translateZ(1px);
 	}
 	/* Luz suave sobre la pared, como en la referencia */
-	.cg-stage::before {
+	.cg-clip::before {
 		content: '';
 		position: absolute;
 		inset: 0 10% 30%;
-		background: radial-gradient(50% 50% at 50% 40%, oklch(100% 0 0 / 0.7), transparent 70%);
+		background: radial-gradient(45% 40% at 50% 45%, oklch(100% 0 0 / 0.35), transparent 70%);
 		pointer-events: none;
 	}
 
 	.cg-strip {
-		--soft: 0;
-		--dim: 0;
+		--sl: 0;
+		--sr: 0;
+		--wl: 0%;
+		--wr: 0%;
 	}
-	.cg-soft {
-		opacity: var(--soft);
+	.cg-face-top {
+		background: transparent;
 	}
-	.cg-text {
-		opacity: calc(1 - var(--soft) * 0.85);
+	.cg-strip:not([data-fx]) .cg-softwrap,
+	.cg-strip:not([data-fx]) .cg-wash {
+		display: none;
 	}
-	.cg-dim {
-		opacity: var(--dim);
+	.cg-softwrap {
+		mask-image: linear-gradient(to right, rgb(0 0 0 / var(--sl)), rgb(0 0 0 / var(--sr)));
 	}
-	/* Neblina clara al estirarse en los bordes, como la luz que se escapa en la referencia */
-	.cg-haze {
-		background: linear-gradient(to bottom, oklch(100% 0 0 / 0.75), oklch(100% 0 0 / 0.45));
-		opacity: var(--soft);
+	/* Lavado hacia el color de la sección: continuo entre tiras, sin "paneles" */
+	.cg-wash {
+		background: linear-gradient(
+			to right,
+			color-mix(in oklab, var(--background) var(--wl), transparent),
+			color-mix(in oklab, var(--background) var(--wr), transparent)
+		);
 	}
+
 	/* El proyecto activo: borde de luz fino para que se sepa cuál estás viendo */
-	.cg-face::after {
+	.cg-face-top::after {
 		content: '';
 		position: absolute;
 		inset: 0;
@@ -521,21 +708,55 @@ const info = proyectos.map((p) => ({
 		transition: box-shadow 500ms cubic-bezier(0.16, 1, 0.3, 1);
 		pointer-events: none;
 	}
-	.cg-card[data-active] .cg-face::after {
-		box-shadow: inset 0 0 0 1px oklch(0% 0 0 / 0.22);
+	.cg-card[data-active] .cg-face-top::after {
+		box-shadow: inset 0 0 0 1px oklch(0% 0 0 / 0.3);
 	}
 
-	/* El título del proyecto activo entra con un pequeño ascenso */
+	/* Info del proyecto activo: sale rápido hacia arriba, entra con resorte desde abajo */
+	.cg-info {
+		transition:
+			opacity 160ms cubic-bezier(0.65, 0, 0.35, 1),
+			translate 170ms cubic-bezier(0.7, 0, 0.84, 0);
+	}
+	.cg-info.is-out {
+		opacity: 0;
+		translate: 0 -8px;
+	}
 	.cg-info.is-in {
-		animation: cg-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+		animation:
+			cg-in-fade var(--dur-out) var(--ease-out) both,
+			cg-in-rise var(--dur-out-spring) var(--ease-out-spring) both;
 	}
 	.cg-info.is-in + .cg-info.is-in {
-		animation-delay: 60ms;
+		animation-delay: 50ms;
 	}
-	@keyframes cg-in {
+	@keyframes cg-in-fade {
 		from {
 			opacity: 0;
-			translate: 0 10px;
+		}
+	}
+	@keyframes cg-in-rise {
+		from {
+			translate: 0 14px;
+		}
+	}
+
+	/* Flechas: se hunden al presionar y vuelven con resorte */
+	.cg-arrow {
+		transition:
+			border-color var(--dur-out) var(--ease-out),
+			scale var(--dur-out-spring) var(--ease-out-spring);
+	}
+	.cg-arrow:active {
+		scale: 0.9;
+		transition-duration: 300ms, 90ms;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cg-info,
+		.cg-arrow {
+			transition-duration: 1ms !important;
+			animation-duration: 1ms !important;
 		}
 	}
 </style>

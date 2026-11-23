@@ -5,11 +5,18 @@ disciplinas: [coreografia, danza]
 role: Coreógrafo e intérprete
 location: Ciudad de México
 summary: Texto de ejemplo. Una o dos frases sobre de qué trata la pieza y por qué importa.
+cover: ../../assets/placeholders/cuerpo-territorio.jpg
+coverAlt: Imagen de ejemplo (reemplazar con foto real)
+gallery:
+  - src: ../../assets/placeholders/cuerpo-territorio-1.jpg
+    alt: Imagen de ejemplo
+  - src: ../../assets/placeholders/cuerpo-territorio-2.jpg
+    alt: Imagen de ejemplo
 featured: true
 order: 1
 credits:
   - role: Coreografía
-    name: Samuel Ramirez
+    name: Samuel Ramírez
   - role: Fotografía
     name: Nombre Apellido
 ---
