@@ -10,7 +10,7 @@ const links = [
 ---
 
 <header
-	class="fixed inset-x-0 top-0 z-50 border-b border-transparent bg-background/70 backdrop-blur-md transition-colors data-[scrolled]:border-border"
+	class="site-header fixed inset-x-0 top-0 z-50 border-b border-transparent"
 	data-header
 >
 	<div class="container-site flex h-16 items-center justify-between">
@@ -21,7 +21,7 @@ const links = [
 				links.map((l) => (
 					<a
 						href={l.href}
-						class="text-sm text-muted-foreground transition-colors hover:text-foreground"
+						class="text-sm text-foreground/75 transition-colors hover:text-foreground"
 					>
 						{l.label}
 					</a>
@@ -73,7 +73,27 @@ const links = [
 		menu.classList.toggle('hidden', !open)
 		toggle.setAttribute('aria-expanded', String(open))
 		toggle.textContent = open ? 'Cerrar' : 'Menú'
+		header.toggleAttribute('data-menu-open', open)
 	}
 	toggle.addEventListener('click', () => setOpen(menu.classList.contains('hidden')))
 	menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)))
 </script>
+
+<style>
+	/* Arriba: transparente, deja ver el hero completo.
+	   Al hacer scroll (o con el menú abierto): vidrio oscuro desenfocado. */
+	.site-header {
+		background-color: oklch(8% 0 0 / 0);
+		backdrop-filter: blur(0px) saturate(1);
+		transition:
+			background-color 700ms cubic-bezier(0.16, 1, 0.3, 1),
+			backdrop-filter 700ms cubic-bezier(0.16, 1, 0.3, 1),
+			border-color 700ms cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.site-header[data-scrolled],
+	.site-header[data-menu-open] {
+		background-color: oklch(8% 0 0 / 0.55);
+		backdrop-filter: blur(20px) saturate(1.4);
+		border-color: oklch(100% 0 0 / 0.08);
+	}
+</style>
