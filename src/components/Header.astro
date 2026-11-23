@@ -10,7 +10,7 @@ const links = [
 ---
 
 <header
-	class="site-header fixed inset-x-0 top-0 z-50 border-b border-transparent"
+	class="site-header fixed inset-x-0 top-0 z-50"
 	data-header
 >
 	<div class="container-site flex h-16 items-center justify-between">
@@ -83,17 +83,44 @@ const links = [
 	/* Arriba: transparente, deja ver el hero completo.
 	   Al hacer scroll (o con el menú abierto): vidrio oscuro desenfocado. */
 	.site-header {
-		background-color: oklch(8% 0 0 / 0);
-		backdrop-filter: blur(0px) saturate(1);
-		transition:
-			background-color 700ms cubic-bezier(0.16, 1, 0.3, 1),
-			backdrop-filter 700ms cubic-bezier(0.16, 1, 0.3, 1),
-			border-color 700ms cubic-bezier(0.16, 1, 0.3, 1);
+		isolation: isolate;
+		border-bottom-width: 0;
 	}
-	.site-header[data-scrolled],
-	.site-header[data-menu-open] {
+	/* El vidrio vive en una capa propia para poder "rebotar" al entrar */
+	.site-header::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: -1;
 		background-color: oklch(8% 0 0 / 0.55);
 		backdrop-filter: blur(20px) saturate(1.4);
-		border-color: oklch(100% 0 0 / 0.08);
+		border-bottom: 1px solid oklch(100% 0 0 / 0.08);
+		transform-origin: top;
+		opacity: 0;
+		scale: 1 0.6;
+		/* salida: suave, sin rebote */
+		transition:
+			opacity 350ms cubic-bezier(0.65, 0, 0.35, 1),
+			scale 450ms cubic-bezier(0.65, 0, 0.35, 1);
+	}
+	.site-header[data-scrolled]::before,
+	.site-header[data-menu-open]::before {
+		opacity: 1;
+		scale: 1 1;
+		/* entrada: resorte con ~12% de rebote */
+		transition:
+			opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
+			scale 750ms
+				linear(
+					0, 0.0398, 0.1363, 0.2712, 0.4184, 0.5705, 0.7086, 0.8328, 0.9325, 1.0118, 1.067,
+					1.1033, 1.1216, 1.1264, 1.1208, 1.1078, 1.0909, 1.0718, 1.0531, 1.0353, 1.0202, 1.0075,
+					0.998, 0.991, 0.9867, 0.9845, 0.984, 0.9848, 0.9866, 0.9887, 0.9912, 0.9935, 0.9957,
+					0.9976, 0.9992, 1.0004, 1.0012, 1.0017, 1.002, 1.002, 1
+				);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.site-header::before {
+			transition-duration: 1ms !important;
+		}
 	}
 </style>

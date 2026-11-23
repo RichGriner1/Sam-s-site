@@ -16,78 +16,99 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 ---
 
 <section
-	class="hero relative isolate flex h-svh min-h-[600px] items-center justify-center overflow-hidden"
-	data-modal-open="reel"
+	class="hero relative isolate flex flex-col pt-24 pb-4 md:h-svh md:min-h-[600px] md:items-center md:justify-center md:overflow-hidden md:p-0"
 	data-hero
 >
-	{
-		heroImage ? (
-			<Image
-				src={heroImage}
-				alt=""
-				widths={[800, 1280, 1920, 2560]}
-				sizes="100vw"
-				width={heroImage.width}
-				height={heroImage.height}
-				loading="eager"
-				decoding="async"
-				fetchpriority="high"
-				class="hero-photo absolute inset-0 -z-30 size-full object-cover"
-			/>
-		) : (
-			<div class="absolute inset-0 -z-30 bg-muted" aria-hidden="true" />
-		)
-	}
-
-	<!-- Reel de fondo: cubre toda la pantalla, sin sonido, sin controles.
-	     El reel viene en formato cine (≈2.39:1) con barras negras dentro del 16:9,
-	     así que el iframe se agranda para que solo se vea la imagen (75% del alto). -->
-	<div class="hero-video pointer-events-none absolute inset-0 -z-20" aria-hidden="true" data-hero-video>
-		<iframe
-			src={bgSrc}
-			title=""
-			tabindex="-1"
-			allow="autoplay; encrypted-media"
-			class="absolute top-1/2 left-1/2 h-[max(56.25vw,133.34svh,800px)] w-[max(100vw,237.04svh,1423px)] -translate-1/2"
-			data-hero-iframe></iframe>
-	</div>
-
-	<!-- Velo para que el texto siempre se lea, más grano de película -->
-	<div
-		class="absolute inset-0 -z-10 bg-gradient-to-b from-background/60 via-background/30 to-background/85"
-		aria-hidden="true"
-	>
-	</div>
-	<!-- Sombra suave detrás del nombre y subtítulo -->
-	<div class="text-veil absolute inset-0 -z-10" aria-hidden="true"></div>
-	<div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
-
-	<div class="container-site text-center">
+	<!-- Texto: en móvil va arriba del video; en escritorio, encima -->
+	<div class="px-4 text-left md:container-site md:text-center">
 		<h1
-			class="fade-in font-display text-[clamp(3.75rem,13vw,11rem)] leading-[0.88] tracking-tight"
+			class="fade-in font-display text-[clamp(3.5rem,15vw,11rem)] leading-[0.88] tracking-tight md:text-[clamp(3.75rem,13vw,11rem)]"
 		>
 			{site.name}
 		</h1>
-		<p class="fade-in fade-in-d2 mx-auto mt-6 max-w-xl font-display text-xl text-foreground/90 italic sm:text-2xl">
+		<p class="fade-in fade-in-d2 mt-4 max-w-xl font-display text-lg text-foreground/90 italic sm:text-2xl md:mx-auto md:mt-6">
 			{site.title}
 		</p>
-		<div class="fade-in fade-in-d4 mt-10 flex flex-wrap justify-center gap-3">
+		<div class="fade-in fade-in-d4 mt-8 grid grid-cols-2 gap-3 md:mt-10 md:flex md:flex-wrap md:justify-center">
 			<button
 				type="button"
 				data-modal-open="reel"
-				class="hero-button inline-flex h-14 items-center rounded-full bg-foreground px-10 text-sm tracking-[0.2em] text-background uppercase transition-opacity duration-500 ease-out hover:opacity-85"
+				class="hero-button inline-flex h-12 items-center justify-center rounded-full bg-foreground px-6 text-xs tracking-[0.2em] text-background uppercase transition-opacity duration-500 ease-out hover:opacity-85 md:h-14 md:px-10 md:text-sm"
 			>
 				Ver reel
 			</button>
 			<button
 				type="button"
 				data-modal-open="contacto"
-				class="hero-button inline-flex h-14 items-center rounded-full border border-foreground/70 bg-background/20 px-10 text-sm tracking-[0.2em] uppercase backdrop-blur-md transition-colors duration-500 ease-out hover:bg-foreground hover:text-background"
+				class="hero-button inline-flex h-12 items-center justify-center rounded-full border border-foreground/70 bg-background/20 px-6 text-xs tracking-[0.2em] uppercase backdrop-blur-md transition-colors duration-500 ease-out hover:bg-foreground hover:text-background md:h-14 md:px-10 md:text-sm"
 			>
 				Contáctame
 			</button>
 		</div>
 	</div>
+
+	<!-- Marco del video: en móvil es una tarjeta con 16px de margen;
+	     en escritorio cubre toda la pantalla detrás del texto. -->
+	<div
+		class="hero-frame relative mx-4 mt-10 aspect-[4/5] overflow-hidden bg-muted md:absolute md:inset-0 md:-z-20 md:m-0 md:aspect-auto"
+		data-hero-frame
+	>
+		{
+			heroImage && (
+				<Image
+					src={heroImage}
+					alt=""
+					widths={[800, 1280, 1920, 2560]}
+					sizes="100vw"
+					width={heroImage.width}
+					height={heroImage.height}
+					loading="eager"
+					decoding="async"
+					fetchpriority="high"
+					class="hero-photo absolute inset-0 size-full object-cover"
+				/>
+			)
+		}
+
+		<!-- Reel sin sonido. El reel viene en formato cine (≈2.39:1) con barras negras
+		     dentro del 16:9, así que el iframe se agranda para que solo se vea la imagen
+		     (la imagen ocupa el 75% del alto). Medidas relativas al marco (cqw / cqh). -->
+		<div class="hero-video pointer-events-none absolute inset-0" aria-hidden="true" data-hero-video>
+			<iframe
+				src={bgSrc}
+				title=""
+				tabindex="-1"
+				allow="autoplay; encrypted-media"
+				class="absolute top-1/2 left-1/2 h-[max(56.25cqw,133.34cqh)] w-[max(100cqw,237.04cqh)] -translate-1/2"
+				data-hero-iframe></iframe>
+		</div>
+
+		<!-- Solo móvil: grano, sombra inferior y etiqueta; toda la tarjeta abre el reel -->
+		<div class="grain absolute inset-0 md:hidden" aria-hidden="true"></div>
+		<div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background/70 to-transparent md:hidden" aria-hidden="true"></div>
+		<button
+			type="button"
+			data-modal-open="reel"
+			class="absolute inset-0 flex items-end p-4 md:hidden"
+			aria-label="Ver reel"
+		>
+			<span class="inline-flex h-10 items-center rounded-full bg-foreground px-4 text-xs font-medium tracking-[0.2em] text-background uppercase">
+				<svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor" class="mr-2">
+					<path d="M0 0l9 5-9 5z"></path>
+				</svg>
+				Reel
+			</span>
+		</button>
+	</div>
+
+	<!-- Solo escritorio: velo para que el texto siempre se lea, más grano -->
+	<div
+		class="absolute inset-0 -z-10 hidden bg-gradient-to-b from-background/60 via-background/30 to-background/85 md:block"
+		aria-hidden="true"
+	>
+	</div>
+	<div class="text-veil absolute inset-0 -z-10 hidden md:block" aria-hidden="true"></div>
+	<div class="grain absolute inset-0 -z-10 hidden md:block" aria-hidden="true"></div>
 
 	<!-- Cursor "Ver reel" que sigue al mouse dentro del hero -->
 	<span
@@ -108,6 +129,13 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 	const iframe = hero.querySelector<HTMLIFrameElement>('[data-hero-iframe]')!
 	const cursor = hero.querySelector<HTMLElement>('[data-hero-cursor]')!
 	const dialogs = document.querySelectorAll<HTMLDialogElement>('[data-modal]')
+
+	// En escritorio todo el hero abre el reel; en móvil solo la tarjeta del video
+	const desktop = matchMedia('(min-width: 768px)')
+	if (desktop.matches) hero.dataset.modalOpen = 'reel'
+	desktop.addEventListener('change', () =>
+		desktop.matches ? (hero.dataset.modalOpen = 'reel') : hero.removeAttribute('data-modal-open')
+	)
 
 	// YouTube muestra su interfaz un instante al cargar: el video aparece después
 	iframe.addEventListener('load', () => setTimeout(() => video.classList.add('is-ready'), 1200))
@@ -151,27 +179,41 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 </script>
 
 <style>
-	.hero {
-		cursor: pointer;
+	@media (min-width: 768px) {
+		.hero {
+			cursor: pointer;
+		}
 	}
-	@media (hover: hover) and (pointer: fine) {
+	@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
 		.hero {
 			cursor: none;
 		}
 	}
 
-	/* Video de fondo: desenfocado y escalado para que el blur no deje bordes */
+	/* El iframe se mide contra este marco (cqw / cqh) */
+	.hero-frame {
+		container-type: size;
+	}
+
+	/* Video: en móvil nítido (es la pieza); en escritorio desenfocado de fondo */
 	.hero-video {
 		opacity: 0;
-		filter: blur(10px) saturate(1.1);
-		scale: 1.08;
 		transition:
 			opacity 1.6s cubic-bezier(0.16, 1, 0.3, 1),
 			scale 2.4s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 	.hero-video.is-ready {
 		opacity: 1;
-		scale: 1.04;
+	}
+	@media (min-width: 768px) {
+		/* escalado para que el blur no deje bordes */
+		.hero-video {
+			filter: blur(10px) saturate(1.1);
+			scale: 1.08;
+		}
+		.hero-video.is-ready {
+			scale: 1.04;
+		}
 	}
 
 	.text-veil {
@@ -182,9 +224,11 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 			oklch(0% 0 0 / 0) 100%
 		);
 	}
-	.hero h1,
-	.hero p {
-		text-shadow: 0 2px 30px oklch(0% 0 0 / 0.35);
+	@media (min-width: 768px) {
+		.hero h1,
+		.hero p {
+			text-shadow: 0 2px 30px oklch(0% 0 0 / 0.35);
+		}
 	}
 
 	.grain {

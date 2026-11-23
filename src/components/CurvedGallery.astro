@@ -1,0 +1,416 @@
+---
+// Galería curva: los proyectos corren sobre una pared cóncava, como el interior
+// de un cilindro. El del centro queda plano y los de los lados se doblan hacia ti.
+// Cada tarjeta se corta en tiras verticales; cada tira se coloca en la curva,
+// así la tarjeta se dobla de verdad (no solo gira).
+import { Image } from 'astro:assets'
+import { getProyectos } from '$lib/proyectos'
+import { getDisciplina } from '../data/site'
+
+const STRIPS = 14
+
+const proyectos = await getProyectos()
+// Repetir la lista si hay pocos proyectos para que la pared nunca quede vacía
+const reps = Math.max(1, Math.ceil(8 / Math.max(proyectos.length, 1)))
+const cards = Array.from({ length: reps }, () => proyectos).flat()
+
+const info = proyectos.map((p) => ({
+	id: p.id,
+	title: p.data.title,
+	year: p.data.year,
+	meta: [p.data.role, ...p.data.disciplinas.map((d) => getDisciplina(d)?.name)]
+		.filter(Boolean)
+		.join(' · ')
+}))
+---
+
+<section class="relative overflow-hidden py-24 sm:py-32" aria-labelledby="cg-title">
+	<div class="container-site flex items-end justify-between gap-6">
+		<div>
+			<p class="eyebrow fade-in">Trabajo seleccionado</p>
+			<h2 id="cg-title" class="fade-in fade-in-d1 mt-4 font-display text-5xl leading-none sm:text-7xl">
+				Proyectos
+			</h2>
+		</div>
+		<a
+			href="/proyectos"
+			class="fade-in shrink-0 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+		>
+			Ver todos →
+		</a>
+	</div>
+
+	<div
+		class="cg-stage relative mt-10 w-full touch-pan-y select-none sm:mt-14"
+		data-cg
+		data-count={proyectos.length}
+		data-info={JSON.stringify(info)}
+		tabindex="0"
+		aria-roledescription="carrusel"
+		aria-label="Proyectos — arrastra o usa las flechas"
+	>
+		{
+			cards.map((p, k) => (
+				<a
+					href={`/proyectos/${p.id}`}
+					class="cg-card"
+					data-cg-card
+					data-index={k % proyectos.length}
+					aria-label={p.data.title}
+					tabindex={k < proyectos.length ? 0 : -1}
+					aria-hidden={k < proyectos.length ? undefined : 'true'}
+					draggable="false"
+				>
+					{Array.from({ length: STRIPS }, (_, i) => (
+						<div class="cg-strip" data-cg-strip data-i={i} aria-hidden="true">
+							<div class="cg-face" data-cg-face>
+								{p.data.cover ? (
+									<Image
+										src={p.data.cover}
+										alt=""
+										widths={[400, 700]}
+										sizes="440px"
+										width={p.data.cover.width}
+										height={p.data.cover.height}
+										loading="lazy"
+										decoding="async"
+										draggable="false"
+										class="absolute inset-0 size-full object-cover"
+									/>
+								) : (
+									<div class={`cg-tone cg-tone-${k % 6} absolute inset-0`} />
+								)}
+								<div class="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+								<span class="absolute top-4 right-4 text-xs text-foreground/70 tabular-nums">
+									{p.data.year}
+								</span>
+								<span class="absolute right-5 bottom-5 left-5 font-display text-[2.2em] leading-[0.95]">
+									{p.data.title}
+								</span>
+							</div>
+						</div>
+					))}
+				</a>
+			))
+		}
+		<!-- reflejo de piso -->
+		<div class="cg-floor pointer-events-none absolute inset-x-0 bottom-0 h-1/4" aria-hidden="true"></div>
+	</div>
+
+	<div class="container-site mt-8 grid items-end gap-6 sm:mt-10 sm:grid-cols-[1fr_auto]">
+		<a href={`/proyectos/${info[0]?.id}`} class="group block" data-cg-link>
+			<p class="cg-info font-display text-3xl leading-tight sm:text-4xl" data-cg-title>
+				{info[0]?.title}
+			</p>
+			<p class="cg-info mt-1 text-sm text-muted-foreground" data-cg-meta>
+				{info[0]?.year} · {info[0]?.meta}
+			</p>
+		</a>
+		<div class="flex items-center gap-4">
+			<span class="text-sm text-muted-foreground tabular-nums" data-cg-count>
+				01 / {String(proyectos.length).padStart(2, '0')}
+			</span>
+			<button
+				type="button"
+				class="grid size-12 place-items-center rounded-full border border-border transition-colors hover:border-foreground"
+				aria-label="Proyecto anterior"
+				data-cg-prev>←</button
+			>
+			<button
+				type="button"
+				class="grid size-12 place-items-center rounded-full border border-border transition-colors hover:border-foreground"
+				aria-label="Proyecto siguiente"
+				data-cg-next>→</button
+			>
+		</div>
+	</div>
+</section>
+
+<script>
+	type Info = { id: string; title: string; year: number; meta: string }
+
+	const stage = document.querySelector<HTMLElement>('[data-cg]')
+	if (stage) init(stage)
+
+	function init(stage: HTMLElement) {
+		const count = Number(stage.dataset.count)
+		const info: Info[] = JSON.parse(stage.dataset.info!)
+		const cards = [...stage.querySelectorAll<HTMLAnchorElement>('[data-cg-card]')]
+		const strips = cards.map((c) => [...c.querySelectorAll<HTMLElement>('[data-cg-strip]')])
+		const faces = cards.map((c) => [...c.querySelectorAll<HTMLElement>('[data-cg-face]')])
+		const N = strips[0]?.length ?? 1
+		const link = document.querySelector<HTMLAnchorElement>('[data-cg-link]')!
+		const titleEl = document.querySelector<HTMLElement>('[data-cg-title]')!
+		const metaEl = document.querySelector<HTMLElement>('[data-cg-meta]')!
+		const countEl = document.querySelector<HTMLElement>('[data-cg-count]')!
+		const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+
+		// --- Medidas (se recalculan al cambiar el tamaño) ---
+		let cardW = 0
+		let cardH = 0
+		let step = 0
+		let total = 0
+		let R = 0
+		let stripW = 0
+		let maxTheta = 0
+
+		function layout() {
+			const w = stage.clientWidth
+			const mobile = w < 768
+			cardW = mobile ? w * 0.68 : Math.min(Math.max(w * 0.26, 300), 460)
+			cardH = cardW * 1.3
+			step = cardW * (mobile ? 1.08 : 1.12)
+			total = step * cards.length
+			// Radio: más chico = más curva. Perspectiva un poco mayor que el radio.
+			R = mobile ? w * 1.1 : w * 0.62
+			stage.style.perspective = `${R * 1.15}px`
+			stage.style.height = `${cardH * (mobile ? 1.12 : 1.2)}px`
+			stage.style.fontSize = `${cardW / 22}px`
+			stripW = cardW / N
+			maxTheta = 1.35
+			for (const list of faces)
+				list.forEach((f, i) => {
+					f.style.width = `${cardW}px`
+					f.style.height = `${cardH}px`
+					f.style.left = `${-i * stripW}px`
+				})
+			for (const list of strips)
+				list.forEach((s) => {
+					s.style.width = `${stripW + 0.75}px` // solapa para que no se vean costuras
+					s.style.height = `${cardH}px`
+				})
+		}
+
+		// --- Movimiento ---
+		let pos = 0 // desplazamiento en px a lo largo de la pared
+		let vel = 0
+		let target: number | null = null
+		let dragging = false
+		let hovering = false
+		let lastInteraction = -Infinity
+		const DRIFT = reduce ? 0 : 0.045 // px por ms
+
+		const wrap = (v: number) => ((((v + total / 2) % total) + total) % total) - total / 2
+
+		function render() {
+			let best = Infinity
+			let active = 0
+			cards.forEach((card, k) => {
+				const s = wrap(k * step - pos)
+				if (Math.abs(s) < best) {
+					best = Math.abs(s)
+					active = Number(card.dataset.index)
+				}
+				strips[k].forEach((el, i) => {
+					const sc = s - cardW / 2 + (i + 0.5) * stripW
+					const t = sc / R
+					if (Math.abs(t) > maxTheta) {
+						el.style.visibility = 'hidden'
+						return
+					}
+					el.style.visibility = ''
+					const x = R * Math.sin(t)
+					const z = R * (1 - Math.cos(t))
+					el.style.transform = `translate3d(${x - stripW / 2}px, ${-cardH / 2}px, ${z}px) rotateY(${-t}rad)`
+				})
+			})
+			setActive(active)
+		}
+
+		let current = -1
+		function setActive(i: number) {
+			if (i === current) return
+			current = i
+			const d = info[i]
+			link.href = `/proyectos/${d.id}`
+			titleEl.textContent = d.title
+			metaEl.textContent = `${d.year} · ${d.meta}`
+			countEl.textContent = `${String(i + 1).padStart(2, '0')} / ${String(count).padStart(2, '0')}`
+			for (const el of [titleEl, metaEl]) {
+				el.classList.remove('is-in')
+				void el.offsetWidth
+				el.classList.add('is-in')
+			}
+		}
+
+		let last = performance.now()
+		function tick(now: number) {
+			const dt = Math.min(now - last, 50)
+			last = now
+			if (!dragging) {
+				if (target !== null) {
+					// acercamiento suave hacia el objetivo (botones / foco)
+					const d = target - pos
+					pos += d * Math.min(1, dt * 0.009)
+					if (Math.abs(d) < 0.5) target = null
+				} else {
+					pos += vel * dt
+					vel *= Math.pow(0.994, dt) // inercia
+					if (Math.abs(vel) < 0.01) vel = 0
+					const idle = now - lastInteraction > 2500
+					if (!hovering && idle && vel === 0) pos += DRIFT * dt
+				}
+			}
+			render()
+			requestAnimationFrame(tick)
+		}
+
+		// --- Arrastre ---
+		let startX = 0
+		let startPos = 0
+		let moved = 0
+		let lastX = 0
+		let lastT = 0
+		stage.addEventListener('pointerdown', (e) => {
+			dragging = true
+			target = null
+			vel = 0
+			moved = 0
+			startX = lastX = e.clientX
+			startPos = pos
+			lastT = performance.now()
+			stage.setPointerCapture(e.pointerId)
+		})
+		stage.addEventListener('pointermove', (e) => {
+			if (!dragging) return
+			const now = performance.now()
+			moved = Math.max(moved, Math.abs(e.clientX - startX))
+			pos = startPos - (e.clientX - startX)
+			if (now > lastT) vel = -(e.clientX - lastX) / (now - lastT)
+			lastX = e.clientX
+			lastT = now
+			lastInteraction = now
+		})
+		const endDrag = () => {
+			if (!dragging) return
+			dragging = false
+			if (performance.now() - lastT > 80) vel = 0
+			lastInteraction = performance.now()
+		}
+		stage.addEventListener('pointerup', endDrag)
+		stage.addEventListener('pointercancel', endDrag)
+		// Un arrastre no debe abrir el proyecto
+		stage.addEventListener(
+			'click',
+			(e) => {
+				if (moved > 6) {
+					e.preventDefault()
+					e.stopPropagation()
+				}
+			},
+			true
+		)
+		stage.addEventListener('pointerenter', (e) => {
+			if (e.pointerType === 'mouse') hovering = true
+		})
+		stage.addEventListener('pointerleave', () => (hovering = false))
+
+		// Scroll horizontal del trackpad (no secuestra el vertical)
+		stage.addEventListener(
+			'wheel',
+			(e) => {
+				const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.shiftKey ? e.deltaY : 0
+				if (!dx) return
+				e.preventDefault()
+				target = null
+				pos += dx
+				lastInteraction = performance.now()
+			},
+			{ passive: false }
+		)
+
+		// --- Botones y teclado ---
+		const goTo = (dir: number) => {
+			const base = target ?? pos
+			target = Math.round(base / step) * step + dir * step
+			vel = 0
+			lastInteraction = performance.now()
+		}
+		document.querySelector('[data-cg-prev]')!.addEventListener('click', () => goTo(-1))
+		document.querySelector('[data-cg-next]')!.addEventListener('click', () => goTo(1))
+		stage.addEventListener('keydown', (e) => {
+			if (e.key === 'ArrowRight') goTo(1)
+			else if (e.key === 'ArrowLeft') goTo(-1)
+			else return
+			e.preventDefault()
+		})
+		// Al tabular a una tarjeta, se centra
+		cards.forEach((card, k) =>
+			card.addEventListener('focus', () => {
+				const s = wrap(k * step - pos)
+				target = pos + s
+				lastInteraction = performance.now()
+			})
+		)
+
+		layout()
+		new ResizeObserver(layout).observe(stage)
+		requestAnimationFrame(tick)
+	}
+</script>
+
+<style>
+	.cg-stage {
+		transform-style: preserve-3d;
+		cursor: grab;
+	}
+	.cg-stage:active {
+		cursor: grabbing;
+	}
+	.cg-stage:focus-visible {
+		outline: 1px solid var(--ring);
+		outline-offset: -1px;
+	}
+	.cg-card {
+		position: absolute;
+		inset: 0;
+		transform-style: preserve-3d;
+	}
+	.cg-card:focus-visible {
+		outline: none;
+	}
+	.cg-strip {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		overflow: hidden;
+		backface-visibility: hidden;
+		will-change: transform;
+	}
+	.cg-face {
+		position: absolute;
+		top: 0;
+		overflow: hidden;
+		background: var(--muted);
+	}
+	.cg-card:focus-visible .cg-face {
+		box-shadow: inset 0 0 0 2px var(--ring);
+	}
+
+	/* Fondos de espera en blanco y negro, distintos por proyecto */
+	.cg-tone-0 { background: radial-gradient(120% 80% at 20% 10%, oklch(42% 0 0), oklch(12% 0 0)); }
+	.cg-tone-1 { background: linear-gradient(160deg, oklch(70% 0 0), oklch(18% 0 0) 70%); }
+	.cg-tone-2 { background: radial-gradient(90% 70% at 80% 30%, oklch(55% 0 0), oklch(10% 0 0)); }
+	.cg-tone-3 { background: linear-gradient(20deg, oklch(14% 0 0), oklch(48% 0 0)); }
+	.cg-tone-4 { background: radial-gradient(100% 60% at 50% 100%, oklch(62% 0 0), oklch(14% 0 0)); }
+	.cg-tone-5 { background: linear-gradient(200deg, oklch(36% 0 0), oklch(8% 0 0) 80%); }
+
+	.cg-floor {
+		background: linear-gradient(to top, var(--background), transparent);
+		transform: translateZ(1px);
+	}
+
+	/* El título del proyecto activo entra con un pequeño ascenso */
+	.cg-info.is-in {
+		animation: cg-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+	.cg-info.is-in + .cg-info.is-in {
+		animation-delay: 60ms;
+	}
+	@keyframes cg-in {
+		from {
+			opacity: 0;
+			translate: 0 10px;
+		}
+	}
+</style>
