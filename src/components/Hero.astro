@@ -1,40 +1,228 @@
 ---
-import Media from './Media.astro'
+// Hero a pantalla completa: el reel corre de fondo, sin sonido y desenfocado.
+// Clic en cualquier parte abre el reel completo (ReelDialog).
+// Foto opcional mientras carga el video: guárdala como src/assets/hero.jpg (o .png / .webp).
+import { Image } from 'astro:assets'
+import type { ImageMetadata } from 'astro'
 import { site } from '../data/site'
+
+const found = import.meta.glob<{ default: ImageMetadata }>('../assets/hero.{jpg,jpeg,png,webp}', {
+	eager: true
+})
+const heroImage = Object.values(found)[0]?.default
+
+const id = site.reelYoutubeId
+const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0&disablekb=1&modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&enablejsapi=1`
 ---
 
-<section class="container-site pt-32 sm:pt-40">
-	<p class="eyebrow fade-in">{site.title}</p>
-	<h1
-		class="fade-in fade-in-d1 mt-6 font-display text-[clamp(3.5rem,14vw,12rem)] leading-[0.85] tracking-tight"
+<section
+	class="hero relative isolate flex h-svh min-h-[600px] items-center justify-center overflow-hidden"
+	data-reel-open
+	data-hero
+>
+	{
+		heroImage ? (
+			<Image
+				src={heroImage}
+				alt=""
+				widths={[800, 1280, 1920, 2560]}
+				sizes="100vw"
+				width={heroImage.width}
+				height={heroImage.height}
+				loading="eager"
+				decoding="async"
+				fetchpriority="high"
+				class="hero-photo absolute inset-0 -z-30 size-full object-cover"
+			/>
+		) : (
+			<div class="absolute inset-0 -z-30 bg-muted" aria-hidden="true" />
+		)
+	}
+
+	<!-- Reel de fondo: cubre toda la pantalla, sin sonido, sin controles -->
+	<div class="hero-video pointer-events-none absolute inset-0 -z-20" aria-hidden="true" data-hero-video>
+		<iframe
+			src={bgSrc}
+			title=""
+			tabindex="-1"
+			allow="autoplay; encrypted-media"
+			class="absolute top-1/2 left-1/2 h-[max(100%,56.25vw)] w-[max(100%,177.78svh)] -translate-1/2"
+			data-hero-iframe></iframe>
+	</div>
+
+	<!-- Velo para que el texto siempre se lea, más grano de película -->
+	<div
+		class="absolute inset-0 -z-10 bg-gradient-to-b from-background/60 via-background/30 to-background/85"
+		aria-hidden="true"
 	>
-		Samuel<br /><em>Ramirez</em>
-	</h1>
-	<div class="mt-10 grid gap-8 md:grid-cols-[2fr_1fr] md:items-end">
-		<p class="fade-in fade-in-d2 max-w-xl text-lg text-muted-foreground sm:text-xl">
-			{site.tagline}
+	</div>
+	<!-- Sombra suave detrás del nombre y subtítulo -->
+	<div class="text-veil absolute inset-0 -z-10" aria-hidden="true"></div>
+	<div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
+
+	<div class="container-site text-center">
+		<h1
+			class="fade-in font-display text-[clamp(3.75rem,13vw,11rem)] leading-[0.88] tracking-tight"
+		>
+			{site.name}
+		</h1>
+		<p class="fade-in fade-in-d2 mx-auto mt-6 max-w-xl font-display text-xl text-foreground/90 italic sm:text-2xl">
+			{site.title}
 		</p>
-		<div class="fade-in fade-in-d3 flex flex-wrap gap-4 md:justify-end">
-			<a
-				href="/proyectos"
-				class="inline-flex h-12 items-center bg-primary px-7 text-sm font-medium tracking-wide text-primary-foreground transition-opacity hover:opacity-85"
+		<div class="fade-in fade-in-d4 mt-10 flex justify-center">
+			<button
+				type="button"
+				data-reel-open
+				class="hero-button inline-flex h-14 items-center rounded-full border border-foreground/70 bg-background/20 px-10 backdrop-blur-md text-sm tracking-[0.2em] uppercase transition-colors duration-500 ease-out hover:bg-foreground hover:text-background"
 			>
-				Ver proyectos
-			</a>
-			<a
-				href="#contacto"
-				class="inline-flex h-12 items-center border border-foreground px-7 text-sm font-medium tracking-wide transition-colors hover:bg-foreground hover:text-background"
-			>
-				Contratar
-			</a>
+				Ver reel
+			</button>
 		</div>
 	</div>
 
-	<!-- Reel / video principal: reemplazar con un <video> o iframe cuando esté listo -->
-	<Media
-		alt="Reel de Samuel Ramirez"
-		label="Reel · video principal"
-		class="fade-in fade-in-d4 mt-16 aspect-[16/9] w-full"
-		eager
-	/>
+	<!-- Cursor "Ver reel" que sigue al mouse dentro del hero -->
+	<span
+		class="hero-cursor pointer-events-none fixed top-0 left-0 z-40 inline-flex h-11 items-center rounded-full bg-foreground px-5 text-xs font-medium tracking-[0.2em] text-background uppercase"
+		aria-hidden="true"
+		data-hero-cursor
+	>
+		<svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor" class="mr-2.5">
+			<path d="M0 0l9 5-9 5z"></path>
+		</svg>
+		Ver reel
+	</span>
 </section>
+
+<script>
+	const hero = document.querySelector<HTMLElement>('[data-hero]')!
+	const video = hero.querySelector<HTMLElement>('[data-hero-video]')!
+	const iframe = hero.querySelector<HTMLIFrameElement>('[data-hero-iframe]')!
+	const cursor = hero.querySelector<HTMLElement>('[data-hero-cursor]')!
+	const dialog = document.querySelector<HTMLDialogElement>('[data-reel]')
+
+	// YouTube muestra su interfaz un instante al cargar: el video aparece después
+	iframe.addEventListener('load', () => setTimeout(() => video.classList.add('is-ready'), 1200))
+
+	// Cursor: sigue al mouse con un pequeño retraso para que se sienta orgánico
+	let x = 0
+	let y = 0
+	let cx = 0
+	let cy = 0
+	let raf = 0
+	const follow = () => {
+		cx += (x - cx) * 0.2
+		cy += (y - cy) * 0.2
+		cursor.style.translate = `${cx}px ${cy}px`
+		raf = Math.abs(x - cx) + Math.abs(y - cy) > 0.1 ? requestAnimationFrame(follow) : 0
+	}
+	hero.addEventListener('pointermove', (e) => {
+		if (e.pointerType !== 'mouse') return
+		x = e.clientX - cursor.offsetWidth / 2
+		y = e.clientY - cursor.offsetHeight / 2
+		if (!hero.hasAttribute('data-cursor')) {
+			cx = x
+			cy = y
+			hero.setAttribute('data-cursor', '')
+		}
+		if (!raf) raf = requestAnimationFrame(follow)
+	})
+	hero.addEventListener('pointerleave', () => hero.removeAttribute('data-cursor'))
+
+	// Pausa el video de fondo mientras el reel está abierto
+	const command = (func: string) =>
+		iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*')
+	if (dialog) {
+		new MutationObserver(() => {
+			command(dialog.open ? 'pauseVideo' : 'playVideo')
+			if (dialog.open) hero.removeAttribute('data-cursor')
+		}).observe(dialog, { attributes: true, attributeFilter: ['open'] })
+	}
+</script>
+
+<style>
+	.hero {
+		cursor: pointer;
+	}
+	@media (hover: hover) and (pointer: fine) {
+		.hero {
+			cursor: none;
+		}
+	}
+
+	/* Video de fondo: desenfocado y escalado para que el blur no deje bordes */
+	.hero-video {
+		opacity: 0;
+		filter: blur(10px) saturate(1.1);
+		scale: 1.08;
+		transition:
+			opacity 1.6s cubic-bezier(0.16, 1, 0.3, 1),
+			scale 2.4s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.hero-video.is-ready {
+		opacity: 1;
+		scale: 1.04;
+	}
+
+	.text-veil {
+		background: radial-gradient(
+			ellipse 70% 45% at 50% 50%,
+			oklch(0% 0 0 / 0.6) 0%,
+			oklch(0% 0 0 / 0.35) 45%,
+			oklch(0% 0 0 / 0) 100%
+		);
+	}
+	.hero h1,
+	.hero p {
+		text-shadow: 0 2px 30px oklch(0% 0 0 / 0.35);
+	}
+
+	.grain {
+		opacity: 0.14;
+		mix-blend-mode: overlay;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	}
+
+	.hero-photo {
+		animation: hero-in 2.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+	@keyframes hero-in {
+		from {
+			opacity: 0;
+			transform: scale(1.06);
+		}
+	}
+
+	/* Cursor "Ver reel": aparece con resorte, se esconde sobre el botón */
+	.hero-cursor {
+		opacity: 0;
+		scale: 0.5;
+		transition:
+			opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
+			scale 600ms
+				linear(
+					0, 0.0239, 0.0835, 0.1658, 0.2602, 0.3592, 0.4569, 0.5496, 0.6345, 0.7103, 0.7763,
+					0.8326, 0.8796, 0.9179, 0.9484, 0.9722, 0.9901, 1.0032, 1.0122, 1.018, 1.0213, 1.0227,
+					1.0227, 1.0217, 1.02, 1.018, 1.0157, 1.0135, 1.0113, 1.0092, 1.0074, 1.0058, 1.0044,
+					1.0032, 1.0023, 1.0015, 1.0009, 1.0004, 1, 0.9998, 1
+				);
+	}
+	@media (hover: hover) and (pointer: fine) {
+		.hero[data-cursor]:not(:has(.hero-button:hover)) .hero-cursor {
+			opacity: 1;
+			scale: 1;
+		}
+		.hero-button {
+			cursor: pointer;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.hero-photo {
+			animation: none;
+		}
+		.hero-video,
+		.hero-cursor {
+			transition-duration: 1ms;
+		}
+	}
+</style>

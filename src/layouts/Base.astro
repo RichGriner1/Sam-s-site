@@ -2,6 +2,7 @@
 import '../styles/global.css'
 import Header from '../components/Header.astro'
 import Footer from '../components/Footer.astro'
+import ReelDialog from '../components/ReelDialog.astro'
 import { site } from '../data/site'
 
 interface Props {
@@ -51,6 +52,7 @@ const ogImage = new URL(image, Astro.site).href
 			<slot />
 		</main>
 		<Footer />
+		<ReelDialog />
 
 		<script>
 			const io = new IntersectionObserver(

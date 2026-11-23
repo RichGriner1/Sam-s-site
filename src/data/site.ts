@@ -2,11 +2,13 @@
 
 export const site = {
 	name: 'Samuel Ramirez',
-	title: 'Artista contemporáneo y gestor cultural',
+	title: 'Coreógrafo, artista contemporáneo y director de movimiento',
 	// TODO: frase final — "Artista multidisciplinario que…"
 	tagline: 'Artista multidisciplinario que crea desde el cuerpo, el espacio y la comunidad.',
 	description:
-		'Samuel Ramirez — artista contemporáneo y gestor cultural. Coreografía, danza, dirección creativa, dirección de arte y proyectos culturales.',
+		'Samuel Ramirez — coreógrafo, artista contemporáneo y director de movimiento. Coreografía, danza, dirección creativa, dirección de arte y proyectos culturales.',
+	// ID del video de YouTube del reel (lo que va después de youtu.be/)
+	reelYoutubeId: 'gRCCaDovSAM',
 	// TODO: datos reales de contacto
 	email: 'hola@samuelramirez.com',
 	whatsapp: '', // ej. '5215512345678' (sin + ni espacios)

@@ -1,0 +1,205 @@
+---
+// Reel en un diálogo: se abre con cualquier elemento [data-reel-open].
+// Se cierra haciendo clic en cualquier parte fuera del video, o con Esc.
+import { site } from '../data/site'
+
+const embed = `https://www.youtube-nocookie.com/embed/${site.reelYoutubeId}?autoplay=1&rel=0&playsinline=1&enablejsapi=1`
+---
+
+<dialog
+	class="reel fixed inset-0 m-0 size-full max-h-none max-w-none bg-transparent p-0 text-foreground"
+	aria-label="Reel de Samuel Ramirez"
+	data-reel
+	data-src={embed}
+>
+	<div class="grid size-full place-items-center p-4">
+		<div
+			class="reel-frame aspect-video w-[min(92vw,calc(80svh*16/9))] overflow-hidden bg-background shadow-2xl sm:w-[min(80vw,calc(80svh*16/9))]"
+			data-reel-frame
+		>
+			<iframe
+				class="size-full"
+				title="Reel de Samuel Ramirez"
+				allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+				data-reel-iframe></iframe>
+		</div>
+	</div>
+
+	<!-- Botón de cerrar que sigue al cursor (en touch queda fijo abajo) -->
+	<span
+		class="reel-cursor pointer-events-none fixed top-0 left-0 grid size-10 place-items-center rounded-full bg-foreground text-background"
+		aria-hidden="true"
+		data-reel-cursor
+	>
+		<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+			<path d="M1 1l12 12M13 1L1 13"></path>
+		</svg>
+	</span>
+	<button
+		type="button"
+		class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-1/2 focus:-translate-x-1/2"
+		data-reel-close
+	>
+		Cerrar
+	</button>
+</dialog>
+
+<script>
+	const dialog = document.querySelector<HTMLDialogElement>('[data-reel]')!
+	const frame = dialog.querySelector<HTMLElement>('[data-reel-frame]')!
+	const iframe = dialog.querySelector<HTMLIFrameElement>('[data-reel-iframe]')!
+	const cursor = dialog.querySelector<HTMLElement>('[data-reel-cursor]')!
+	let clearTimer = 0
+
+	const open = () => {
+		clearTimeout(clearTimer)
+		if (!iframe.src) iframe.src = dialog.dataset.src!
+		dialog.showModal()
+	}
+
+	const close = () => {
+		// Pausa de inmediato; el iframe se vacía cuando termina la animación de salida
+		iframe.contentWindow?.postMessage(
+			JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
+			'*'
+		)
+		dialog.close()
+	}
+
+	dialog.addEventListener('close', () => {
+		clearTimer = window.setTimeout(() => iframe.removeAttribute('src'), 500)
+	})
+
+	document.addEventListener('click', (e) => {
+		const trigger = (e.target as Element).closest('[data-reel-open]')
+		if (trigger) {
+			e.preventDefault()
+			open()
+		}
+	})
+
+	// Cualquier clic fuera del video cierra
+	dialog.addEventListener('click', (e) => {
+		if (!frame.contains(e.target as Node)) close()
+	})
+
+	// El círculo de cerrar sigue al cursor y se esconde sobre el video
+	dialog.addEventListener('pointermove', (e) => {
+		if (e.pointerType !== 'mouse') return
+		cursor.style.translate = `${e.clientX - 20}px ${e.clientY - 20}px`
+		dialog.toggleAttribute('data-over-frame', frame.contains(e.target as Node))
+		dialog.setAttribute('data-has-cursor', '')
+	})
+	frame.addEventListener('pointerenter', () => dialog.setAttribute('data-over-frame', ''))
+	frame.addEventListener('pointerleave', () => dialog.removeAttribute('data-over-frame'))
+</script>
+
+<style is:global>
+	html:has(.reel[open]) {
+		overflow: hidden;
+	}
+
+	/* --- Diálogo: entra con resorte, sale con ease suave --- */
+	.reel {
+		--spring: linear(
+			0, 0.0239, 0.0835, 0.1658, 0.2602, 0.3592, 0.4569, 0.5496, 0.6345, 0.7103, 0.7763, 0.8326,
+			0.8796, 0.9179, 0.9484, 0.9722, 0.9901, 1.0032, 1.0122, 1.018, 1.0213, 1.0227, 1.0227, 1.0217,
+			1.02, 1.018, 1.0157, 1.0135, 1.0113, 1.0092, 1.0074, 1.0058, 1.0044, 1.0032, 1.0023, 1.0015,
+			1.0009, 1.0004, 1, 0.9998, 1
+		);
+		--settle: cubic-bezier(0.16, 1, 0.3, 1);
+		cursor: none;
+		transition:
+			display 450ms allow-discrete,
+			overlay 450ms allow-discrete;
+	}
+	@media (hover: none), (pointer: coarse) {
+		.reel {
+			cursor: auto;
+		}
+	}
+
+	.reel::backdrop {
+		background-color: oklch(0% 0 0 / 0);
+		backdrop-filter: blur(0px);
+		transition:
+			background-color 450ms cubic-bezier(0.65, 0, 0.35, 1),
+			backdrop-filter 450ms cubic-bezier(0.65, 0, 0.35, 1),
+			display 450ms allow-discrete,
+			overlay 450ms allow-discrete;
+	}
+	.reel[open]::backdrop {
+		background-color: oklch(0% 0 0 / 0.7);
+		backdrop-filter: blur(24px) saturate(1.2);
+		transition-duration: 700ms;
+		transition-timing-function: var(--settle);
+	}
+	@starting-style {
+		.reel[open]::backdrop {
+			background-color: oklch(0% 0 0 / 0);
+			backdrop-filter: blur(0px);
+		}
+	}
+
+	/* Video: cierre (estado base) */
+	.reel-frame {
+		opacity: 0;
+		scale: 0.92;
+		translate: 0 24px;
+		transition:
+			opacity 300ms cubic-bezier(0.65, 0, 0.35, 1),
+			scale 450ms cubic-bezier(0.65, 0, 0.35, 1),
+			translate 450ms cubic-bezier(0.65, 0, 0.35, 1);
+	}
+	/* Video: apertura con resorte */
+	.reel[open] .reel-frame {
+		opacity: 1;
+		scale: 1;
+		translate: 0 0;
+		transition:
+			opacity 400ms var(--settle),
+			scale 700ms var(--spring),
+			translate 700ms var(--spring);
+	}
+	@starting-style {
+		.reel[open] .reel-frame {
+			opacity: 0;
+			scale: 0.92;
+			translate: 0 24px;
+		}
+	}
+
+	/* --- Círculo de cerrar --- */
+	.reel-cursor {
+		opacity: 0;
+		scale: 0.4;
+		transition:
+			opacity 300ms var(--settle),
+			scale 500ms var(--spring);
+	}
+	.reel[open][data-has-cursor]:not([data-over-frame]) .reel-cursor {
+		opacity: 1;
+		scale: 1;
+	}
+	@media (hover: none), (pointer: coarse) {
+		.reel-cursor {
+			top: auto;
+			bottom: 2.5rem;
+			left: 50%;
+			translate: -50% 0 !important;
+		}
+		.reel[open] .reel-cursor {
+			opacity: 1;
+			scale: 1;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.reel,
+		.reel::backdrop,
+		.reel-frame,
+		.reel-cursor {
+			transition-duration: 1ms !important;
+		}
+	}
+</style>
