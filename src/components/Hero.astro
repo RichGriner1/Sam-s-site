@@ -29,7 +29,7 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 		<p class="fade-in fade-in-d2 mt-4 max-w-xl font-display text-lg text-foreground/90 italic sm:text-2xl md:mx-auto md:mt-6">
 			{site.title}
 		</p>
-		<div class="fade-in fade-in-d4 mt-8 grid grid-cols-2 gap-3 md:mt-10 md:flex md:flex-wrap md:justify-center">
+		<div class="fade-in fade-in-d4 mt-8 grid gap-3 md:mt-10 md:flex md:flex-wrap md:justify-center">
 			<button
 				type="button"
 				data-modal-open="reel"
@@ -261,7 +261,7 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 					1.0032, 1.0023, 1.0015, 1.0009, 1.0004, 1, 0.9998, 1
 				);
 	}
-	@media (hover: hover) and (pointer: fine) {
+	@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
 		.hero[data-cursor]:not(:has(.hero-button:hover)) .hero-cursor {
 			opacity: 1;
 			scale: 1;
