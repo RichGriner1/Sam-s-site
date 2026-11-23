@@ -21,10 +21,10 @@
 	--color-destructive-foreground: var(--destructive-foreground);
 	--color-selection: var(--selection);
 	--color-selection-foreground: var(--selection-foreground);
-	--radius-sm: var(--radius);
-	--radius-md: var(--radius);
+	--radius-sm: calc(var(--radius) - 3px);
+	--radius-md: calc(var(--radius) - 1px);
 	--radius-lg: var(--radius);
-	--radius-xl: var(--radius);
+	--radius-xl: calc(var(--radius) + 1px);
 	--font-sans: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
 	--font-display: 'Playfair', ui-serif, Georgia, serif;
 }
@@ -38,6 +38,8 @@
 	}
 	html {
 		scroll-behavior: smooth;
+		/* el espacio de la barra se reserva: abrir un diálogo no mueve la página */
+		scrollbar-gutter: stable;
 	}
 	body {
 		@apply bg-background text-foreground font-sans antialiased;
@@ -51,6 +53,13 @@
 
 @utility eyebrow {
 	@apply text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase;
+}
+
+/* Panel de vidrio para los diálogos: oscuro translúcido + desenfoque, texto legible */
+@utility glass-panel {
+	background-color: oklch(14% 0 0 / 0.74);
+	backdrop-filter: blur(28px) saturate(1.3);
+	border: 1px solid oklch(100% 0 0 / 0.1);
 }
 
 @utility container-site {

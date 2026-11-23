@@ -18,23 +18,3 @@ const embed = `https://www.youtube-nocookie.com/embed/${site.reelYoutubeId}?auto
 		data-reel-iframe
 		data-src={embed}></iframe>
 </Modal>
-
-<script>
-	const dialog = document.querySelector<HTMLDialogElement>('[data-modal="reel"]')!
-	const iframe = dialog.querySelector<HTMLIFrameElement>('[data-reel-iframe]')!
-	let clearTimer = 0
-
-	dialog.addEventListener('modal:open', () => {
-		clearTimeout(clearTimer)
-		if (!iframe.src) iframe.src = iframe.dataset.src!
-	})
-
-	// Pausa de inmediato; el iframe se vacía cuando termina la animación de salida
-	dialog.addEventListener('close', () => {
-		iframe.contentWindow?.postMessage(
-			JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
-			'*'
-		)
-		clearTimer = window.setTimeout(() => iframe.removeAttribute('src'), 500)
-	})
-</script>

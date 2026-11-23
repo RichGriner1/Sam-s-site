@@ -1,21 +1,24 @@
 ---
 // Formulario de contacto en un diálogo: se abre con cualquier [data-modal-open="contacto"].
 // Un trigger con data-modal-tipo="coreografia" preselecciona el tipo de proyecto.
+import { Image } from 'astro:assets'
 import Modal from './Modal.astro'
 import { site, disciplinas } from '../data/site'
+import foto from '../assets/contacto.jpg'
 
 const field =
-	'mt-2 w-full border-0 border-b border-border bg-transparent px-0 py-2.5 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-foreground focus:ring-0 focus:outline-none transition-colors'
+	'mt-1 w-full border-0 border-b border-border bg-transparent px-0 py-2 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-foreground focus:ring-0 focus:outline-none transition-colors'
 const label = 'eyebrow block'
 ---
 
 <Modal
 	id="contacto"
 	label="Contactar a Samuel Ramirez"
-	class="max-h-[88svh] w-[min(92vw,600px)] overflow-y-auto border border-border bg-card p-7 shadow-2xl sm:p-10"
+	class="grid max-h-[80svh] w-[min(92vw,600px)] md:max-h-[84svh] overflow-hidden glass-panel shadow-2xl md:w-[min(92vw,1040px)] md:grid-cols-[1.15fr_1fr]"
 >
+	<!-- Formulario (columna con scroll propio) + foto a la derecha en escritorio -->
 	<form
-		class="contact-form"
+		class="contact-form max-h-[80svh] overflow-y-auto overscroll-contain p-6 sm:p-10 md:max-h-[84svh]"
 		data-contact-form
 		data-endpoint={site.formEndpoint}
 		data-email={site.email}
@@ -23,13 +26,13 @@ const label = 'eyebrow block'
 	>
 		<div data-contact-fields>
 			<p class="eyebrow">Contacto</p>
-			<h2 class="mt-3 font-display text-4xl leading-none sm:text-5xl">Hablemos.</h2>
-			<p class="mt-3 text-sm text-muted-foreground">
+			<h2 class="mt-2 font-display text-3xl leading-none sm:text-5xl">Hablemos.</h2>
+			<p class="mt-2 text-sm text-muted-foreground">
 				Cuéntame la idea, la fecha y el lugar. Respondo personalmente cada mensaje.
 			</p>
 
-			<div class="mt-8 grid gap-6 sm:grid-cols-2">
-				<label class="sm:col-span-2">
+			<div class="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 sm:mt-6 sm:gap-x-6 sm:gap-y-5">
+				<label class="col-span-2">
 					<span class={label}>Nombre *</span>
 					<input name="nombre" type="text" autocomplete="name" required class={field} />
 				</label>
@@ -38,7 +41,7 @@ const label = 'eyebrow block'
 					<input name="email" type="email" autocomplete="email" required class={field} />
 				</label>
 				<label>
-					<span class={label}>Teléfono / WhatsApp</span>
+					<span class={label}>WhatsApp</span>
 					<input name="telefono" type="tel" autocomplete="tel" class={field} />
 				</label>
 				<label>
@@ -53,26 +56,28 @@ const label = 'eyebrow block'
 					<span class={label}>Fecha aproximada</span>
 					<input name="fecha" type="text" placeholder="Ej. marzo 2026" class={field} />
 				</label>
-				<label class="sm:col-span-2">
+				<label class="col-span-2">
 					<span class={label}>Mensaje *</span>
 					<textarea
 						name="mensaje"
-						rows="4"
+						rows="3"
 						required
 						placeholder="Cuéntame del proyecto, lugar, presupuesto…"
 						class={`${field} resize-none`}></textarea>
 				</label>
 			</div>
 
-			<p class="mt-6 hidden text-sm text-destructive" role="alert" data-contact-error></p>
-
-			<button
-				type="submit"
-				class="mt-8 inline-flex h-14 w-full items-center justify-center rounded-full bg-foreground text-sm tracking-[0.2em] text-background uppercase transition-opacity duration-500 ease-out hover:opacity-85 disabled:opacity-50"
-				data-contact-submit
-			>
-				Enviar
-			</button>
+			<!-- Error a la izquierda, botón compacto abajo a la derecha -->
+			<div class="mt-6 flex items-center justify-between gap-4">
+				<p class="hidden text-sm text-destructive" role="alert" data-contact-error></p>
+				<button
+					type="submit"
+					class="ml-auto inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-foreground px-6 text-xs tracking-[0.2em] text-background uppercase transition-opacity duration-500 ease-out hover:opacity-85 disabled:opacity-50"
+					data-contact-submit
+				>
+					Enviar →
+				</button>
+			</div>
 		</div>
 
 		<div class="hidden py-10 text-center" data-contact-done>
@@ -82,6 +87,19 @@ const label = 'eyebrow block'
 			</p>
 		</div>
 	</form>
+	<div class="relative hidden md:block" aria-hidden="true">
+		<Image
+			src={foto}
+			alt=""
+			widths={[500, 800, 1100]}
+			sizes="480px"
+			width={foto.width}
+			height={foto.height}
+			loading="lazy"
+			decoding="async"
+			class="absolute inset-0 size-full object-cover"
+		/>
+	</div>
 </Modal>
 
 <script>
@@ -100,8 +118,8 @@ const label = 'eyebrow block'
 	}
 
 	dialog.addEventListener('modal:open', (e) => {
-		const trigger = (e as CustomEvent<{ trigger: HTMLElement }>).detail.trigger
-		const preset = trigger.dataset.modalTipo
+		const trigger = (e as CustomEvent<{ trigger?: HTMLElement }>).detail.trigger
+		const preset = trigger?.dataset.modalTipo
 		if (preset) tipo.value = preset
 		// Si ya se envió, el formulario vuelve a empezar
 		if (!done.classList.contains('hidden')) {
@@ -161,7 +179,7 @@ const label = 'eyebrow block'
 			showError(`No se pudo enviar. Escríbeme directo a ${form.dataset.email}.`)
 		} finally {
 			submit.disabled = false
-			submit.textContent = 'Enviar'
+			submit.textContent = 'Enviar →'
 		}
 	})
 </script>

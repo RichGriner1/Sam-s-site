@@ -18,6 +18,7 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 <section
 	class="hero relative isolate flex flex-col pt-24 pb-4 md:h-svh md:min-h-[600px] md:items-center md:justify-center md:overflow-hidden md:p-0"
 	data-hero
+	data-loop={JSON.stringify(site.reelLoop)}
 >
 	<!-- Texto: en móvil va arriba del video; en escritorio, encima -->
 	<div class="px-4 text-left md:container-site md:text-center">
@@ -33,14 +34,14 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 			<button
 				type="button"
 				data-modal-open="reel"
-				class="hero-button inline-flex h-12 items-center justify-center rounded-full bg-foreground px-6 text-xs tracking-[0.2em] text-background uppercase transition-opacity duration-500 ease-out hover:opacity-85 md:h-14 md:px-10 md:text-sm"
+				class="hero-button inline-flex h-12 items-center justify-center rounded-lg bg-foreground px-6 text-xs tracking-[0.2em] text-background uppercase transition-opacity duration-500 ease-out hover:opacity-85 md:h-14 md:px-10 md:text-sm"
 			>
 				Ver reel
 			</button>
 			<button
 				type="button"
 				data-modal-open="contacto"
-				class="hero-button inline-flex h-12 items-center justify-center rounded-full border border-foreground/70 bg-background/20 px-6 text-xs tracking-[0.2em] uppercase backdrop-blur-md transition-colors duration-500 ease-out hover:bg-foreground hover:text-background md:h-14 md:px-10 md:text-sm"
+				class="hero-button inline-flex h-12 items-center justify-center rounded-lg border border-foreground/70 bg-background/20 px-6 text-xs tracking-[0.2em] uppercase backdrop-blur-md transition-colors duration-500 ease-out hover:bg-foreground hover:text-background md:h-14 md:px-10 md:text-sm"
 			>
 				Contáctame
 			</button>
@@ -50,7 +51,7 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 	<!-- Marco del video: en móvil es una tarjeta con 16px de margen;
 	     en escritorio cubre toda la pantalla detrás del texto. -->
 	<div
-		class="hero-frame relative mx-4 mt-10 aspect-[4/5] overflow-hidden bg-muted md:absolute md:inset-0 md:-z-20 md:m-0 md:aspect-auto"
+		class="hero-frame relative mx-4 mt-10 aspect-[4/5] overflow-hidden rounded-lg bg-muted md:absolute md:inset-0 md:-z-20 md:m-0 md:aspect-auto md:rounded-none"
 		data-hero-frame
 	>
 		{
@@ -92,7 +93,7 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 			class="absolute inset-0 flex items-end p-4 md:hidden"
 			aria-label="Ver reel"
 		>
-			<span class="inline-flex h-10 items-center rounded-full bg-foreground px-4 text-xs font-medium tracking-[0.2em] text-background uppercase">
+			<span class="inline-flex h-10 items-center rounded-lg bg-foreground px-4 text-xs font-medium tracking-[0.2em] text-background uppercase">
 				<svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor" class="mr-2">
 					<path d="M0 0l9 5-9 5z"></path>
 				</svg>
@@ -112,7 +113,7 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 
 	<!-- Cursor "Ver reel" que sigue al mouse dentro del hero -->
 	<span
-		class="hero-cursor pointer-events-none fixed top-0 left-0 z-40 inline-flex h-11 items-center rounded-full bg-foreground px-5 text-xs font-medium tracking-[0.2em] text-background uppercase"
+		class="hero-cursor pointer-events-none fixed top-0 left-0 z-40 inline-flex h-11 items-center rounded-lg bg-foreground px-5 text-xs font-medium tracking-[0.2em] text-background uppercase"
 		aria-hidden="true"
 		data-hero-cursor
 	>
@@ -164,6 +165,47 @@ const bgSrc = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&lo
 		if (!raf) raf = requestAnimationFrame(follow)
 	})
 	hero.addEventListener('pointerleave', () => hero.removeAttribute('data-cursor'))
+
+	// Repite solo el tramo de baile: antes de que lleguen los créditos, vuelve al inicio.
+	// Usa la API de YouTube sobre el iframe que ya existe.
+	type YTPlayer = { getCurrentTime(): number; getDuration(): number; seekTo(s: number, a: boolean): void; playVideo(): void }
+	const loop = JSON.parse(hero.dataset.loop!) as { start: number; end: number; cutEnd: number }
+	const w = window as unknown as {
+		YT?: { Player: new (el: HTMLIFrameElement, o: object) => YTPlayer }
+		onYouTubeIframeAPIReady?: () => void
+	}
+	const startLoop = () => {
+		const player = new w.YT!.Player(iframe, {
+			events: {
+				onReady: () => {
+					setInterval(() => {
+						const dur = player.getDuration()
+						if (!dur) return
+						const end = loop.end || Math.max(loop.start + 5, dur - loop.cutEnd)
+						if (player.getCurrentTime() >= end) player.seekTo(loop.start, true)
+					}, 250)
+				},
+				// por si termina igual (YT.PlayerState.ENDED = 0)
+				onStateChange: (e: { data: number }) => {
+					if (e.data === 0) {
+						player.seekTo(loop.start, true)
+						player.playVideo()
+					}
+				}
+			}
+		})
+	}
+	if (w.YT?.Player) startLoop()
+	else {
+		const prev = w.onYouTubeIframeAPIReady
+		w.onYouTubeIframeAPIReady = () => {
+			prev?.()
+			startLoop()
+		}
+		const tag = document.createElement('script')
+		tag.src = 'https://www.youtube.com/iframe_api'
+		document.head.append(tag)
+	}
 
 	// Pausa el video de fondo mientras haya un diálogo abierto
 	const command = (func: string) =>

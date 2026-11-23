@@ -9,6 +9,10 @@ export const site = {
 		'Samuel Ramirez — coreógrafo, artista contemporáneo y director de movimiento. Coreografía, danza, dirección creativa, dirección de arte y proyectos culturales.',
 	// ID del video de YouTube del reel (lo que va después de youtu.be/)
 	reelYoutubeId: 'gRCCaDovSAM',
+	// Video de fondo del hero: qué tramo del reel se repite (en segundos).
+	// end: segundo donde termina el baile (el reel funde a negro ~49s y luego vienen créditos).
+	// Si es 0, se recortan los últimos `cutEnd` segundos.
+	reelLoop: { start: 0, end: 49, cutEnd: 5 },
 	// Servicio que recibe el formulario de contacto (ej. https://formspree.io/f/xxxx).
 	// Vacío = el formulario abre el correo del visitante con todo ya escrito.
 	formEndpoint: '',

@@ -1,0 +1,77 @@
+---
+// Un diálogo por disciplina (id "d-<slug>"): qué ofrece, 2–3 proyectos como prueba
+// y un botón que abre el formulario con la disciplina ya elegida.
+import Modal from './Modal.astro'
+import Media from './Media.astro'
+import { disciplinas } from '../data/site'
+import { getProyectos } from '$lib/proyectos'
+
+const items = await Promise.all(
+	disciplinas.map(async (d) => ({ d, proyectos: (await getProyectos(d.slug)).slice(0, 3) }))
+)
+---
+
+{
+	items.map(({ d, proyectos }) => (
+		<Modal
+			id={`d-${d.slug}`}
+			label={d.name}
+			class="max-h-[90svh] w-[min(94vw,720px)] overflow-y-auto overscroll-contain glass-panel p-6 shadow-2xl sm:p-10"
+		>
+			<p class="eyebrow">Disciplina</p>
+			<h2 class="mt-3 font-display text-4xl leading-none sm:text-6xl">{d.name}</h2>
+			<p class="mt-4 text-lg text-muted-foreground">{d.intro}</p>
+
+			<p class="eyebrow mt-10">Qué ofrezco</p>
+			<ul class="mt-3 divide-y divide-border border-y border-border">
+				{d.services.map((s, i) => (
+					<li class="flex items-baseline gap-5 py-3.5">
+						<span class="text-xs text-muted-foreground tabular-nums">
+							{String(i + 1).padStart(2, '0')}
+						</span>
+						<span>{s}</span>
+					</li>
+				))}
+			</ul>
+
+			{proyectos.length > 0 && (
+				<>
+					<p class="eyebrow mt-10">Proyectos recientes</p>
+					<div class="mt-4 grid grid-cols-3 gap-3">
+						{proyectos.map((p) => (
+							<button type="button" data-modal-open={`p-${p.id}`} class="group text-left">
+								<Media
+									src={p.data.cover}
+									alt={p.data.coverAlt ?? p.data.title}
+									label=""
+									class="aspect-[4/5] rounded-md transition-opacity group-hover:opacity-80"
+									sizes="220px"
+									widths={[220, 440]}
+								/>
+								<span class="mt-2 block text-sm leading-tight">{p.data.title}</span>
+								<span class="text-xs text-muted-foreground">{p.data.year}</span>
+							</button>
+						))}
+					</div>
+				</>
+			)}
+
+			<div class="mt-10 flex flex-col gap-5 border-t border-border pt-8 sm:flex-row sm:items-center sm:justify-between">
+				<div>
+					<p class="font-display text-2xl leading-tight sm:text-3xl">
+						Hablemos de tu proyecto de {d.name.toLowerCase()}.
+					</p>
+					<p class="mt-1 text-sm text-muted-foreground">Cuéntame la idea y te respondo personalmente.</p>
+				</div>
+				<button
+					type="button"
+					data-modal-open="contacto"
+					data-modal-tipo={d.name}
+					class="inline-flex h-12 shrink-0 items-center justify-center rounded-lg bg-foreground px-8 text-xs tracking-[0.2em] text-background uppercase transition-opacity hover:opacity-85"
+				>
+					Cotizar
+				</button>
+			</div>
+		</Modal>
+	))
+}

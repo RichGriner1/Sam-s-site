@@ -1,5 +1,6 @@
 ---
 import Media from './Media.astro'
+import retrato from '../assets/sobre-mi.jpg'
 
 // TODO: reemplazar con la bio, cifras y colaboradores reales
 const cifras = [
@@ -10,9 +11,13 @@ const cifras = [
 const colaboradores = ['Institución', 'Festival', 'Marca', 'Compañía', 'Museo', 'Productora']
 ---
 
-<section id="sobre-mi" class="scroll-mt-20 border-t border-border">
+<section id="sobre-mi" class="scroll-mt-16 border-t border-border">
 	<div class="container-site grid gap-12 py-24 sm:py-32 md:grid-cols-2 md:gap-16">
-		<Media alt="Retrato de Samuel Ramirez" label="Retrato" class="fade-in aspect-[4/5]" />
+		<Media
+			src={retrato}
+			alt="Samuel Ramirez sonriendo durante un ensayo, en blanco y negro"
+			class="fade-in aspect-[4/5]"
+		/>
 
 		<div class="md:pt-12">
 			<p class="eyebrow fade-in">Sobre mí</p>

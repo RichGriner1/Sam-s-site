@@ -15,12 +15,12 @@ const proyectos = await getProyectos()
 			Proyectos
 		</h1>
 		<nav class="fade-in fade-in-d2 mt-10 flex flex-wrap gap-2" aria-label="Filtrar por disciplina">
-			<span class="border border-foreground bg-foreground px-4 py-2 text-sm text-background">Todos</span>
+			<span class="rounded-md border border-foreground bg-foreground px-4 py-2 text-sm text-background">Todos</span>
 			{
 				disciplinas.map((d) => (
 					<a
 						href={`/${d.slug}`}
-						class="border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+						class="rounded-md border border-border px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
 					>
 						{d.name}
 					</a>

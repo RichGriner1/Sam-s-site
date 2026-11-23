@@ -19,7 +19,7 @@ const { id, label, class: className } = Astro.props
 	data-modal={id}
 >
 	<div class="grid size-full place-items-center p-4">
-		<div class={cn('modal-panel', className)} data-modal-panel>
+		<div class={cn('modal-panel rounded-lg', className)} data-modal-panel>
 			<slot />
 		</div>
 	</div>
@@ -70,7 +70,60 @@ const { id, label, class: className } = Astro.props
 		panel.addEventListener('pointerleave', () => dialog.removeAttribute('data-over-panel'))
 	}
 
-	document.querySelectorAll<HTMLDialogElement>('[data-modal]').forEach(setup)
+	// Videos dentro de un diálogo: se cargan al abrir (iframe[data-src]) y se
+	// pausan y descargan al cerrar, para que nunca sigan sonando de fondo.
+	const loadMedia = (dialog: HTMLDialogElement) => {
+		clearTimeout(Number(dialog.dataset.unloadTimer))
+		dialog.querySelectorAll<HTMLIFrameElement>('iframe[data-src]').forEach((f) => {
+			if (!f.getAttribute('src')) f.src = f.dataset.src!
+		})
+	}
+	const unloadMedia = (dialog: HTMLDialogElement) => {
+		dialog.querySelectorAll<HTMLIFrameElement>('iframe[data-src]').forEach((f) =>
+			f.contentWindow?.postMessage(
+				JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
+				'*'
+			)
+		)
+		dialog.dataset.unloadTimer = String(
+			window.setTimeout(
+				() =>
+					dialog
+						.querySelectorAll<HTMLIFrameElement>('iframe[data-src]')
+						.forEach((f) => f.removeAttribute('src')),
+				500
+			)
+		)
+	}
+
+	// Al cerrar, el navegador devuelve el foco al botón que abrió el diálogo y puede
+	// desplazar la página hasta él. Guardamos dónde estabas y volvemos ahí.
+	let savedY: number | null = null
+	const anyOpen = () => !!document.querySelector('dialog[data-modal][open]')
+	const restoreScroll = () => {
+		if (savedY === null || anyOpen()) return
+		const y = savedY
+		requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'instant' }))
+		savedY = null
+	}
+
+	const open = (dialog: HTMLDialogElement, trigger?: HTMLElement) => {
+		if (savedY === null) savedY = window.scrollY
+		dialog.dispatchEvent(new CustomEvent('modal:open', { detail: { trigger } }))
+		loadMedia(dialog)
+		dialog.showModal()
+		dialog.querySelector<HTMLElement>('[data-modal-panel]')?.scrollTo({ top: 0 })
+	}
+
+	document.querySelectorAll<HTMLDialogElement>('[data-modal]').forEach((d) => {
+		setup(d)
+		d.addEventListener('close', () => {
+			unloadMedia(d)
+			// en un cambio de diálogo (A → B) el siguiente se abre enseguida; esperamos
+			setTimeout(restoreScroll, 260)
+			window.scrollTo({ top: savedY ?? window.scrollY, behavior: 'instant' })
+		})
+	})
 
 	document.addEventListener('click', (e) => {
 		const trigger = (e.target as Element).closest<HTMLElement>('[data-modal-open]')
@@ -80,9 +133,20 @@ const { id, label, class: className } = Astro.props
 		)
 		if (!dialog) return
 		e.preventDefault()
-		dialog.dispatchEvent(new CustomEvent('modal:open', { detail: { trigger } }))
-		dialog.showModal()
+		// Si el botón está dentro de otro diálogo, ese se cierra y se abre el nuevo
+		const from = trigger.closest<HTMLDialogElement>('dialog[open]')
+		if (from && from !== dialog) {
+			from.close()
+			setTimeout(() => open(dialog, trigger), 220)
+		} else open(dialog, trigger)
 	})
+
+	// Un enlace como /#p-umbral abre ese diálogo al llegar (para compartir)
+	const fromHash = location.hash.slice(1)
+	if (fromHash) {
+		const d = document.querySelector<HTMLDialogElement>(`[data-modal="${CSS.escape(fromHash)}"]`)
+		if (d) open(d)
+	}
 </script>
 
 <style is:global>
@@ -107,6 +171,12 @@ const { id, label, class: className } = Astro.props
 	.modal-panel {
 		cursor: auto;
 	}
+	/* Barras de scroll finas y discretas dentro de los diálogos */
+	.modal-panel,
+	.modal-panel * {
+		scrollbar-width: thin;
+		scrollbar-color: oklch(100% 0 0 / 0.18) transparent;
+	}
 	@media (hover: none), (pointer: coarse) {
 		.modal {
 			cursor: auto;
@@ -123,7 +193,7 @@ const { id, label, class: className } = Astro.props
 			overlay 450ms allow-discrete;
 	}
 	.modal[open]::backdrop {
-		background-color: oklch(0% 0 0 / 0.7);
+		background-color: oklch(0% 0 0 / 0.45);
 		backdrop-filter: blur(24px) saturate(1.2);
 		transition-duration: 700ms;
 		transition-timing-function: var(--settle);

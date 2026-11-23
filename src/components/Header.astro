@@ -1,11 +1,12 @@
 ---
 import { site } from '../data/site'
 
+// Todo vive en el inicio: los links bajan a cada sección y Contacto abre el formulario
 const links = [
-	{ href: '/proyectos', label: 'Proyectos' },
+	{ href: '/#proyectos', label: 'Proyectos' },
 	{ href: '/#disciplinas', label: 'Disciplinas' },
 	{ href: '/#sobre-mi', label: 'Sobre mí' },
-	{ href: '/#contacto', label: 'Contacto' }
+	{ href: '/#contacto', label: 'Contacto', modal: 'contacto' }
 ]
 ---
 
@@ -21,6 +22,7 @@ const links = [
 				links.map((l) => (
 					<a
 						href={l.href}
+						data-modal-open={l.modal}
 						class="text-sm text-foreground/75 transition-colors hover:text-foreground"
 					>
 						{l.label}
@@ -50,7 +52,7 @@ const links = [
 			{
 				links.map((l) => (
 					<li>
-						<a href={l.href} class="block py-3 font-display text-3xl">
+						<a href={l.href} data-modal-open={l.modal} class="block py-3 font-display text-3xl">
 							{l.label}
 						</a>
 					</li>

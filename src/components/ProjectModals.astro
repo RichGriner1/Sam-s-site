@@ -1,0 +1,120 @@
+---
+// Un diálogo por proyecto (id "p-<proyecto>"): contexto breve, fotos y un llamado
+// a contactar con el tipo de proyecto ya elegido. Se abre con data-modal-open="p-<id>".
+import { render } from 'astro:content'
+import Modal from './Modal.astro'
+import Media from './Media.astro'
+import { getDisciplina } from '../data/site'
+import { getProyectos } from '$lib/proyectos'
+
+const proyectos = await getProyectos()
+const items = await Promise.all(
+	proyectos.map(async (p) => ({ p, Content: (await render(p)).Content }))
+)
+---
+
+{
+	items.map(({ p, Content }) => {
+		const d = p.data
+		const tags = d.disciplinas.map((s) => getDisciplina(s)!).filter(Boolean)
+		const meta = [
+			{ label: 'Año', value: String(d.year) },
+			{ label: 'Rol', value: d.role },
+			{ label: 'Cliente', value: d.client },
+			{ label: 'Lugar', value: d.location }
+		].filter((m) => m.value)
+		const photos = d.gallery.slice(0, 4)
+
+		return (
+			<Modal
+				id={`p-${p.id}`}
+				label={d.title}
+				class="max-h-[90svh] w-[min(94vw,880px)] overflow-y-auto overscroll-contain glass-panel shadow-2xl"
+			>
+				{d.video ? (
+					<div class="aspect-video w-full bg-muted">
+						<iframe
+							data-src={d.video}
+							title={d.title}
+							class="size-full"
+							loading="lazy"
+							allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+						/>
+					</div>
+				) : (
+					<Media
+						src={d.cover}
+						alt={d.coverAlt ?? d.title}
+						class="aspect-[16/9] w-full rounded-none"
+						sizes="880px"
+						widths={[600, 900, 1400]}
+					/>
+				)}
+
+				<div class="p-6 sm:p-10">
+					<ul class="flex flex-wrap gap-2">
+						{tags.map((t) => (
+							<li class="rounded-sm border border-border px-3 py-1 text-xs tracking-wide text-muted-foreground uppercase">
+								{t.name}
+							</li>
+						))}
+					</ul>
+					<h2 class="mt-5 font-display text-4xl leading-none sm:text-6xl">{d.title}</h2>
+					<p class="mt-4 max-w-2xl text-lg text-muted-foreground">{d.summary}</p>
+
+					<div class="mt-8 grid gap-8 sm:grid-cols-[1fr_2fr]">
+						<dl class="grid grid-cols-2 gap-4 sm:grid-cols-1">
+							{meta.map((m) => (
+								<div>
+									<dt class="eyebrow">{m.label}</dt>
+									<dd class="mt-1 text-sm">{m.value}</dd>
+								</div>
+							))}
+						</dl>
+						<div class="prose prose-invert max-w-none text-sm prose-p:text-muted-foreground">
+							<Content />
+						</div>
+					</div>
+
+					{/* Fotos: hasta 4; mientras no haya, dos recuadros de espera */}
+					<div class="mt-8 grid grid-cols-2 gap-3">
+						{photos.length > 0
+							? photos.map((g, i) => (
+									<Media
+										src={g.src}
+										alt={g.alt}
+										class={i === 0 && photos.length % 2 === 1 ? 'col-span-2 aspect-[16/9]' : 'aspect-[4/5]'}
+										sizes="440px"
+										widths={[400, 800]}
+									/>
+								))
+							: [0, 1].map(() => <Media alt="" label="Foto" class="aspect-[4/5]" />)}
+					</div>
+
+					{/* Llamado a la acción */}
+					<div class="mt-10 flex flex-col gap-5 border-t border-border pt-8 sm:flex-row sm:items-center sm:justify-between">
+						<div>
+							<p class="font-display text-2xl leading-tight sm:text-3xl">¿Algo así para tu proyecto?</p>
+							<p class="mt-1 text-sm text-muted-foreground">Cuéntame la idea y te respondo personalmente.</p>
+						</div>
+						<button
+							type="button"
+							data-modal-open="contacto"
+							data-modal-tipo={tags[0]?.name}
+							class="inline-flex h-12 shrink-0 items-center justify-center rounded-lg bg-foreground px-8 text-xs tracking-[0.2em] text-background uppercase transition-opacity hover:opacity-85"
+						>
+							Contáctame
+						</button>
+					</div>
+
+					<a
+						href={`/proyectos/${p.id}`}
+						class="mt-6 inline-block text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+					>
+						Ver página del proyecto ↗
+					</a>
+				</div>
+			</Modal>
+		)
+	})
+}
